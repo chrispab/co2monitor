@@ -1,0 +1,12 @@
+Connector: Black wire: ground, Red wire: +5volts, Blue wire: Rx, Green wire: Tx.
+
+looking from above with connector at bottom, from left to right wires
+:
+
+1. Yellow
+2. Green - Tx
+3. Blue - Rx
+4. Red - +5v
+5. Black - 0v
+6. White
+7. Brown
