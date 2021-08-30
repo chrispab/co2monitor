@@ -30,6 +30,10 @@ const char* password = "a new router can solve many problems";
 // const char* mqtt_server = "iotstack.local";
 const char* mqtt_server = "192.168.0.100";
 
+WiFiServer espServer(80); /* Instance of WiFiServer with port number 80 */
+/* 80 is the Port Number for HTTP Web Server */
+/* A String to capture the incoming HTTP GET Request */
+String request;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -148,11 +152,25 @@ void setup() {
     setup_wifi();
     client.setServer(mqtt_server, 1883);
     client.setCallback(callback);
+
+    delay(2000);
+    Serial.print("\n");
+    Serial.println("Starting ESP32 Web Server...");
+    espServer.begin(); /* Start the HTTP web Server */
+    Serial.println("ESP32 Web Server Started");
+    Serial.print("\n");
+    Serial.print("The URL of ESP32 Web Server is: ");
+    Serial.print("http://");
+    Serial.println(WiFi.localIP());
+    Serial.print("\n");
+    Serial.println("Use the above URL in your Browser to access ESP32 Web Server\n");
+
+    getDataTimer = millis() - 11000;
 }
 
 void loop() {
     int CO2;
-    if (millis() - getDataTimer >= 2000) {
+    if (millis() - getDataTimer >= 10000) {
         /* note: getCO2() default is command "CO2 Unlimited". This returns the correct CO2 reading even 
         if below background CO2 levels or above range (useful to validate sensor). You can use the 
         usual documented command with getCO2(false) */
@@ -162,10 +180,10 @@ void loop() {
         Serial.print("CO2 (ppm): ");
         Serial.println(CO2);
 
-        // int8_t Temp;
-        // Temp = myMHZ19.getTemperature();                     // Request Temperature (as Celsius)
-        // Serial.print("Temperature (C): ");
-        // Serial.println(Temp);
+        int8_t Temp;
+        Temp = myMHZ19.getTemperature();  // Request Temperature (as Celsius)
+        Serial.print("Temperature (C): ");
+        Serial.println(Temp);
 
         getDataTimer = millis();
 
@@ -187,4 +205,129 @@ void loop() {
             //
         }
     }
+
+    //!web section
+    WiFiClient client = espServer.available(); /* Check if a client is available */
+    if (!client) {
+        return;
+    }
+
+    Serial.println("New Client!!!");
+    boolean currentLineIsBlank = true;
+    while (client.connected()) {
+        if (client.available()) {
+            char c = client.read();
+            request += c;
+            Serial.write(c);
+            /* if you've gotten to the end of the line (received a newline */
+            /* character) and the line is blank, the http request has ended, */
+            /* so you can send a reply */
+            if (c == '\n' && currentLineIsBlank) {
+                /* Extract the URL of the request */
+                /* We have four URLs. If IP Address is 192.168.1.6 (for example),
+        * then URLs are: 
+        * 192.168.1.6/GPIO16ON
+        * 192.168.1.6/GPIO16OFF
+        * 192.168.1.6/GPIO17ON
+        * 192.168.1.6/GPIO17OFF
+        */
+                /* Based on the URL from the request, turn the LEDs ON or OFF */
+                if (request.indexOf("/GPIO16ON") != -1) {
+                    Serial.println("GPIO16 LED is ON");
+                    // digitalWrite(gpio16LEDPin, HIGH);
+                    // gpio16Value = HIGH;
+                }
+                if (request.indexOf("/GPIO16OFF") != -1) {
+                    Serial.println("GPIO16 LED is OFF");
+                    // digitalWrite(gpio16LEDPin, LOW);
+                    // gpio16Value = LOW;
+                }
+                if (request.indexOf("/GPIO17ON") != -1) {
+                    Serial.println("GPIO17 LED is ON");
+                    // digitalWrite(gpio17LEDPin, HIGH);
+                    // gpio17Value = HIGH;
+                }
+                if (request.indexOf("/GPIO17OFF") != -1) {
+                    Serial.println("GPIO17 LED is OFF");
+                    // digitalWrite(gpio17LEDPin, LOW);
+                    // gpio17Value = LOW;
+                }
+
+                /* HTTP Response in the form of HTML Web Page */
+                client.println("HTTP/1.1 200 OK");
+                client.println("Content-Type: text/html");
+                client.println("Connection: close");
+                client.println();  //  IMPORTANT
+
+                client.println("<!DOCTYPE HTML>");
+                client.println("<html>");
+
+                client.println("<head>");
+                client.println("<meta http-equiv=\"refresh\" content=\"10\">");
+                client.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+                client.println("<link rel=\"icon\" href=\"data:,\">");
+
+                client.println("<style>");
+
+                client.println("html { font-family: Courier New; display: inline-block; margin: 0px auto; text-align: center;}");
+                client.println(".button {border: none; color: white; padding: 10px 20px; text-align: center;");
+                client.println("text-decoration: none; font-size: 25px; margin: 2px; cursor: pointer;}");
+                client.println(".button1 {background-color: #FF0000;}");
+                client.println(".button2 {background-color: #00FF00;}");
+
+                // client.println("meter { width: 50%; height: 75px; }");
+                client.println("meter { width: 50%; height: 75px; border: 1px solid #ccc; border-radius: 3px;}");
+                // client.println("meter::-webkit-meter-bar { background: none; background-color: whiteSmoke; box-shadow: 0 5px 5px -5px #333 inset;}");
+
+
+
+                client.println("</style>");
+
+                client.println("</head>");
+
+                client.println("<body>");
+
+                client.println("<h2>ESP32 CO2 Monitor</h2>");                                                                                                                           
+
+                client.println("<meter class=\"co2_meter\" min=\"400\" low=\"800\" high=\"1000\"max=\"1500\" optimum=\"500\" value=\"788\"></meter>");
+                // if (gpio16Value == LOW) {
+                client.print("<h1>CO2 level(ppm): ");
+                client.print(CO2);
+                client.println("</h1>");
+
+                // client.print("<p><a href=\"/GPIO16ON\"><button class=\"button button1\">Click to turn ON</button></a></p>");
+                // } else {
+                //     client.println("<p>GPIO16 LED Status: ON</p>");
+                //     client.print("<p><a href=\"/GPIO16OFF\"><button class=\"button button2\">Click to turn OFF</button></a></p>");
+                // }
+
+                // if (gpio17Value == LOW) {
+                // client.println("<p>GPIO17 LED Status: OFF</p>");
+                //     client.print("<p><a href=\"/GPIO17ON\"><button class=\"button button1\">Click to turn ON</button></a></p>");
+                // } else {
+                // client.println("<p>GPIO17 LED Status: ON</p>");
+                // client.print("<p><a href=\"/GPIO17OFF\"><button class=\"button button2\">Click to turn OFF</button></a></p>");
+                // }
+
+                client.println("</body>");
+
+                client.println("</html>");
+
+                break;
+            }
+            if (c == '\n') {
+                currentLineIsBlank = true;
+            } else if (c != '\r') {
+                currentLineIsBlank = false;
+            }
+            //client.print("\n");
+        }
+    }
+
+    delay(1);
+    request = "";
+    //client.flush();
+    client.stop();
+    Serial.println("Client disconnected");
+    Serial.print("\n");
 }
