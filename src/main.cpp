@@ -32,6 +32,10 @@ unsigned long getDataTimer = 0;
 
 const char* ssid = "notwork";
 const char* password = "a new router can solve many problems";
+
+const char* soft_ap_ssid = "CO2 Monitor";
+const char* soft_ap_password = "testpassword";
+
 // const char* mqtt_server = "iotstack.local";
 const char* mqtt_server = "192.168.0.100";
 
@@ -47,6 +51,7 @@ unsigned long lastMsg = 0;
 char msg[MSG_BUFFER_SIZE];
 int value = 0;
 
+#define MONITOR_SPEED 115200
 #define MAX_SAFE_LEVEL 800
 #define MAX_MID_LEVEL 1000
 
@@ -57,7 +62,9 @@ void setup_wifi() {
     Serial.print("Connecting to ");
     Serial.println(ssid);
 
-    WiFi.mode(WIFI_STA);
+    // WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_MODE_APSTA);
+    WiFi.softAP(soft_ap_ssid, soft_ap_password);
     WiFi.begin(ssid, password);
 
     while (WiFi.status() != WL_CONNECTED) {
@@ -66,6 +73,9 @@ void setup_wifi() {
     }
 
     randomSeed(micros());
+
+    Serial.print("ESP32 IP as soft AP: ");
+    Serial.println(WiFi.softAPIP());
 
     Serial.println("");
     Serial.println("WiFi connected");
@@ -119,7 +129,7 @@ void reconnect() {
 void setup() {
     delay(2000);
     heartBeatLED.begin();
-    Serial.begin(9600);  // Device to serial monitor feedback
+    Serial.begin(MONITOR_SPEED);  // Device to serial monitor feedback
 
     // mySerial.begin(MHZ19_BAUDRATE, SWSERIAL_8N1, RX_PIN, TX_PIN);
     // mySerial.enableIntTx(false);
@@ -164,26 +174,26 @@ void setup() {
 
     delay(2000);
     Serial.print("\n");
-    Serial.println("Starting ESP32 Web Server...");
+    Serial.println("Starting CO2 monitor Web Server...");
     espServer.begin(); /* Start the HTTP web Server */
-    Serial.println("ESP32 Web Server Started");
+    Serial.println("CO2 monitor Web Server Started");
     Serial.print("\n");
-    Serial.print("The URL of ESP32 Web Server is: ");
+    Serial.print("The URL of CO2 monitor Web Server is: ");
     Serial.print("http://");
     Serial.println(WiFi.localIP());
     Serial.print("\n");
-    Serial.println("Use the above URL in your Browser to access ESP32 Web Server\n");
+    Serial.println("Use the above URL in your Browser to access the CO2 monitor Web Server\n");
 
     getDataTimer = millis() - 11000;
 }
+
+
 int CO2 = 100;
-
-
 
 // Current time
 unsigned long currentTime = millis();
 // Previous time
-unsigned long previousTime = 0; 
+unsigned long previousTime = 0;
 // Define timeout time in milliseconds (example: 2000ms = 2s)
 const long timeoutTime = 2000;
 
@@ -228,7 +238,7 @@ void loop() {
         return;
     }
 
-    Serial.println("New WebServerclient!!!");
+    Serial.println("\nNew WebServerclient!!!");
     boolean currentLineIsBlank = true;
 
     if (WebServerclient) {  // If a new client connects,
@@ -314,9 +324,9 @@ void loop() {
                     if (CO2 <= MAX_SAFE_LEVEL) {
                         WebServerclient.println("<h2>Level is Good</h2>");
                     } else if (CO2 <= MAX_MID_LEVEL) {
-                        WebServerclient.println("<h2>Level could be better</h2>");
+                        WebServerclient.println("<h2>Level mid range - increase ventilation</h2>");
                     } else if (CO2 > MAX_MID_LEVEL) {
-                        WebServerclient.println("<h2>WARNING High Level!</h2>");
+                        WebServerclient.println("<h2>WARNING High Level! Increase ventilation now</h2>");
                     }
                     WebServerclient.println("</body>");
                     WebServerclient.println("</html>");
@@ -332,12 +342,12 @@ void loop() {
             }
         }
 
-        delay(2);
+        // delay(2);
         request = "";
-        // WebServerclient.flush();
+        WebServerclient.flush();
         WebServerclient.stop();
         Serial.println("WebServerclient disconnected");
         Serial.print("\n");
-        delay(2);
+        // delay(2);
     }
 }
