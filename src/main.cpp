@@ -4,6 +4,8 @@
 
 #include <PubSubClient.h>
 #include <WiFi.h>
+#include "LedFader.h"
+
 
 #include "MHZ19.h"
 // #define RX_PIN 10                                          // Rx pin which the MHZ19 Tx pin is attached to
@@ -23,6 +25,11 @@
 MHZ19 myMHZ19;  // Constructor for library
 // SoftwareSerial mySerial;  // (Uno example) create device to MH-Z19 serial
 
+#define ESP32_ONBOARD_BLUE_LED_PIN GPIO_NUM_2 // RHS_P_4 esp32 devkit on board blue LED
+#define HEART_BEAT_TIME 500
+LedFader heartBeatLED(ESP32_ONBOARD_BLUE_LED_PIN, 1, 0, 255, HEART_BEAT_TIME, true);
+
+
 unsigned long getDataTimer = 0;
 
 const char* ssid = "notwork";
@@ -36,11 +43,14 @@ WiFiServer espServer(80); /* Instance of WiFiServer with port number 80 */
 String request;
 
 WiFiClient espClient;
-PubSubClient client(espClient);
+PubSubClient MQTTclient(espClient);
 unsigned long lastMsg = 0;
 #define MSG_BUFFER_SIZE (50)
 char msg[MSG_BUFFER_SIZE];
 int value = 0;
+
+#define MAX_SAFE_LEVEL 800
+#define MAX_MID_LEVEL 1000
 
 void setup_wifi() {
     delay(10);
@@ -86,21 +96,21 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 void reconnect() {
     // Loop until we're reconnected
-    while (!client.connected()) {
+    while (!MQTTclient.connected()) {
         Serial.print("Attempting MQTT connection...");
         // Create a random client ID
         String clientId = "ESP8266Client-";
         clientId += String(random(0xffff), HEX);
         // Attempt to connect
-        if (client.connect(clientId.c_str())) {
+        if (MQTTclient.connect(clientId.c_str())) {
             Serial.println("connected");
             // Once connected, publish an announcement...
-            client.publish("co2sensor", "hello co2");
+            MQTTclient.publish("co2sensor", "hello co2");
             // ... and resubscribe
-            client.subscribe("inTopic");
+            MQTTclient.subscribe("inTopic");
         } else {
             Serial.print("failed, rc=");
-            Serial.print(client.state());
+            Serial.print(MQTTclient.state());
             Serial.println(" try again in 5 seconds");
             // Wait 5 seconds before retrying
             delay(5000);
@@ -110,6 +120,7 @@ void reconnect() {
 
 void setup() {
     delay(2000);
+    heartBeatLED.begin();
     Serial.begin(9600);  // Device to serial monitor feedback
 
     // mySerial.begin(MHZ19_BAUDRATE, SWSERIAL_8N1, RX_PIN, TX_PIN);
@@ -147,11 +158,11 @@ void setup() {
     Serial.print("ABC Status: ");
     myMHZ19.getABC() ? Serial.println("ON") : Serial.println("OFF");
 
-    pinMode(BUILTIN_LED, OUTPUT);  // Initialize the BUILTIN_LED pin as an output
+    // pinMode(BUILTIN_LED, OUTPUT);  // Initialize the BUILTIN_LED pin as an output
     // Serial.begin(9600);
     setup_wifi();
-    client.setServer(mqtt_server, 1883);
-    client.setCallback(callback);
+    MQTTclient.setServer(mqtt_server, 1883);
+    MQTTclient.setCallback(callback);
 
     delay(2000);
     Serial.print("\n");
@@ -167,9 +178,13 @@ void setup() {
 
     getDataTimer = millis() - 11000;
 }
-
+int CO2=100;
 void loop() {
-    int CO2;
+    
+
+    heartBeatLED.update();
+
+
     if (millis() - getDataTimer >= 10000) {
         /* note: getCO2() default is command "CO2 Unlimited". This returns the correct CO2 reading even 
         if below background CO2 levels or above range (useful to validate sensor). You can use the 
@@ -180,43 +195,38 @@ void loop() {
         Serial.print("CO2 (ppm): ");
         Serial.println(CO2);
 
-        int8_t Temp;
-        Temp = myMHZ19.getTemperature();  // Request Temperature (as Celsius)
-        Serial.print("Temperature (C): ");
-        Serial.println(Temp);
-
         getDataTimer = millis();
 
-        if (!client.connected()) {
+        if (!MQTTclient.connected()) {
             reconnect();
         }
-        client.loop();
+        MQTTclient.loop();
 
         unsigned long now = millis();
         if (now - lastMsg > 2000) {
             lastMsg = now;
             ++value;
             snprintf(msg, MSG_BUFFER_SIZE, "%ld", CO2);
-            Serial.print("Publish message: ");
+            Serial.print("MQTT Publish message: co2sensor_01/co2ppm : ");
             Serial.println(msg);
-            client.publish("co2sensor_01/co2ppm", msg);
+            MQTTclient.publish("co2sensor_01/co2ppm", msg);
 
-            // client.publish("co2sensor", CO2);
+            // MQTTclient.publish("co2sensor", CO2);
             //
         }
     }
 
     //!web section
-    WiFiClient client = espServer.available(); /* Check if a client is available */
-    if (!client) {
+    WiFiClient WebServerclient = espServer.available(); /* Check if a WebServerclient is available */
+    if (!WebServerclient) {
         return;
     }
 
-    Serial.println("New Client!!!");
+    Serial.println("New WebServerclient!!!");
     boolean currentLineIsBlank = true;
-    while (client.connected()) {
-        if (client.available()) {
-            char c = client.read();
+    while (WebServerclient.connected()) {
+        if (WebServerclient.available()) {
+            char c = WebServerclient.read();
             request += c;
             Serial.write(c);
             /* if you've gotten to the end of the line (received a newline */
@@ -254,66 +264,54 @@ void loop() {
                 }
 
                 /* HTTP Response in the form of HTML Web Page */
-                client.println("HTTP/1.1 200 OK");
-                client.println("Content-Type: text/html");
-                client.println("Connection: close");
-                client.println();  //  IMPORTANT
+                WebServerclient.println("HTTP/1.1 200 OK");
+                WebServerclient.println("Content-Type: text/html");
+                WebServerclient.println("Connection: close");
+                WebServerclient.println();  //  IMPORTANT
 
-                client.println("<!DOCTYPE HTML>");
-                client.println("<html>");
+                WebServerclient.println("<!DOCTYPE HTML>");
+                WebServerclient.println("<html>");
 
-                client.println("<head>");
-                client.println("<meta http-equiv=\"refresh\" content=\"10\">");
-                client.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-                client.println("<link rel=\"icon\" href=\"data:,\">");
+                WebServerclient.println("<head>");
+                WebServerclient.println("<meta http-equiv=\"refresh\" content=\"10\">");
+                WebServerclient.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+                WebServerclient.println("<link rel=\"icon\" href=\"data:,\">");
 
-                client.println("<style>");
+                WebServerclient.println("<style>");
 
-                client.println("html { font-family: Courier New; display: inline-block; margin: 0px auto; text-align: center;}");
-                client.println(".button {border: none; color: white; padding: 10px 20px; text-align: center;");
-                client.println("text-decoration: none; font-size: 25px; margin: 2px; cursor: pointer;}");
-                client.println(".button1 {background-color: #FF0000;}");
-                client.println(".button2 {background-color: #00FF00;}");
+                WebServerclient.println("html { font-family: Courier New; display: inline-block; margin: 0px auto; text-align: center;}");
+                WebServerclient.println(".button {border: none; color: white; padding: 10px 20px; text-align: center;");
+                WebServerclient.println("text-decoration: none; font-size: 25px; margin: 2px; cursor: pointer;}");
+                WebServerclient.println(".button1 {background-color: #FF0000;}");
+                WebServerclient.println(".button2 {background-color: #00FF00;}");
 
-                // client.println("meter { width: 50%; height: 75px; }");
-                client.println("meter { width: 50%; height: 75px; border: 1px solid #ccc; border-radius: 3px;}");
-                // client.println("meter::-webkit-meter-bar { background: none; background-color: whiteSmoke; box-shadow: 0 5px 5px -5px #333 inset;}");
+                // WebServerclient.println("meter { width: 50%; height: 75px; }");
+                WebServerclient.println("meter { width: 50%; height: 75px; border: 1px solid #ccc; border-radius: 3px;}");
+                // WebServerclient.println("meter::-webkit-meter-bar { background: none; background-color: whiteSmoke; box-shadow: 0 5px 5px -5px #333 inset;}");
 
+                WebServerclient.println("</style>");
+                WebServerclient.println("</head>");
+                WebServerclient.println("<body>");
+                WebServerclient.println("<h2>ESP32 CO2 Monitor</h2>");                                                                                                                           
 
-
-                client.println("</style>");
-
-                client.println("</head>");
-
-                client.println("<body>");
-
-                client.println("<h2>ESP32 CO2 Monitor</h2>");                                                                                                                           
-
-                client.print("<meter class=\"co2_meter\" min=\"400\" low=\"800\" high=\"1000\"max=\"1500\" optimum=\"500\" value=\"");
-                client.print(CO2);
-                client.println("\"></meter>");
+                WebServerclient.print("<meter class=\"co2_meter\" min=\"400\" low=\"800\" high=\"1000\"max=\"1500\" optimum=\"500\" value=\"");
+                WebServerclient.print(CO2);
+                WebServerclient.println("\"></meter>");
                 // if (gpio16Value == LOW) {
-                client.print("<h1>CO2 level(ppm): ");
-                client.print(CO2);
-                client.println("</h1>");
-
-                // client.print("<p><a href=\"/GPIO16ON\"><button class=\"button button1\">Click to turn ON</button></a></p>");
-                // } else {
-                //     client.println("<p>GPIO16 LED Status: ON</p>");
-                //     client.print("<p><a href=\"/GPIO16OFF\"><button class=\"button button2\">Click to turn OFF</button></a></p>");
-                // }
-
-                // if (gpio17Value == LOW) {
-                // client.println("<p>GPIO17 LED Status: OFF</p>");
-                //     client.print("<p><a href=\"/GPIO17ON\"><button class=\"button button1\">Click to turn ON</button></a></p>");
-                // } else {
-                // client.println("<p>GPIO17 LED Status: ON</p>");
-                // client.print("<p><a href=\"/GPIO17OFF\"><button class=\"button button2\">Click to turn OFF</button></a></p>");
-                // }
-
-                client.println("</body>");
-
-                client.println("</html>");
+                WebServerclient.print("<h1>CO2 level(ppm): ");
+                WebServerclient.print(CO2);
+                WebServerclient.println("</h1>");
+                if(CO2 <= MAX_SAFE_LEVEL){
+                    WebServerclient.println("<h2>Level is Good</h2>");
+                }else
+                if(CO2 <= MAX_MID_LEVEL){
+                    WebServerclient.println("<h2>Level could be better</h2>");
+                }else
+                if(CO2 > MAX_MID_LEVEL){
+                    WebServerclient.println("<h2>WARNING High Level!</h2>");
+                }                
+                WebServerclient.println("</body>");
+                WebServerclient.println("</html>");
 
                 break;
             }
@@ -322,14 +320,14 @@ void loop() {
             } else if (c != '\r') {
                 currentLineIsBlank = false;
             }
-            //client.print("\n");
+            // WebServerclient.print("\n");
         }
     }
 
     delay(1);
     request = "";
-    //client.flush();
-    client.stop();
-    Serial.println("Client disconnected");
+    // WebServerclient.flush();
+    WebServerclient.stop();
+    Serial.println("WebServerclient disconnected");
     Serial.print("\n");
 }
