@@ -4,9 +4,8 @@
 
 #include <PubSubClient.h>
 #include <WiFi.h>
+
 #include "LedFader.h"
-
-
 #include "MHZ19.h"
 // #define RX_PIN 10                                          // Rx pin which the MHZ19 Tx pin is attached to
 // #define TX_PIN 11                                          // Tx pin which the MHZ19 Rx pin is attached to
@@ -25,10 +24,9 @@
 MHZ19 myMHZ19;  // Constructor for library
 // SoftwareSerial mySerial;  // (Uno example) create device to MH-Z19 serial
 
-#define ESP32_ONBOARD_BLUE_LED_PIN GPIO_NUM_2 // RHS_P_4 esp32 devkit on board blue LED
+#define ESP32_ONBOARD_BLUE_LED_PIN GPIO_NUM_2  // RHS_P_4 esp32 devkit on board blue LED
 #define HEART_BEAT_TIME 500
 LedFader heartBeatLED(ESP32_ONBOARD_BLUE_LED_PIN, 1, 0, 255, HEART_BEAT_TIME, true);
-
 
 unsigned long getDataTimer = 0;
 
@@ -178,12 +176,19 @@ void setup() {
 
     getDataTimer = millis() - 11000;
 }
-int CO2=100;
+int CO2 = 100;
+
+
+
+// Current time
+unsigned long currentTime = millis();
+// Previous time
+unsigned long previousTime = 0; 
+// Define timeout time in milliseconds (example: 2000ms = 2s)
+const long timeoutTime = 2000;
+
 void loop() {
-    
-
     heartBeatLED.update();
-
 
     if (millis() - getDataTimer >= 10000) {
         /* note: getCO2() default is command "CO2 Unlimited". This returns the correct CO2 reading even 
@@ -217,117 +222,122 @@ void loop() {
     }
 
     //!web section
-    WiFiClient WebServerclient = espServer.available(); /* Check if a WebServerclient is available */
+
+    WiFiClient WebServerclient = espServer.available(); /* Listen for incoming clients */
     if (!WebServerclient) {
         return;
     }
 
     Serial.println("New WebServerclient!!!");
     boolean currentLineIsBlank = true;
-    while (WebServerclient.connected()) {
-        if (WebServerclient.available()) {
-            char c = WebServerclient.read();
-            request += c;
-            Serial.write(c);
-            /* if you've gotten to the end of the line (received a newline */
-            /* character) and the line is blank, the http request has ended, */
-            /* so you can send a reply */
-            if (c == '\n' && currentLineIsBlank) {
-                /* Extract the URL of the request */
-                /* We have four URLs. If IP Address is 192.168.1.6 (for example),
+
+    if (WebServerclient) {  // If a new client connects,
+        currentTime = millis();
+        previousTime = currentTime;
+        // while (WebServerclient.connected()) {
+        while (WebServerclient.connected() && currentTime - previousTime <= timeoutTime) {  // loop while the client's connected
+            currentTime = millis();
+
+            if (WebServerclient.available()) {
+                char c = WebServerclient.read();
+                request += c;
+                Serial.write(c);
+                /* if you've gotten to the end of the line (received a newline */
+                /* character) and the line is blank, the http request has ended, */
+                /* so you can send a reply */
+                if (c == '\n' && currentLineIsBlank) {
+                    /* Extract the URL of the request */
+                    /* We have four URLs. If IP Address is 192.168.1.6 (for example),
         * then URLs are: 
         * 192.168.1.6/GPIO16ON
         * 192.168.1.6/GPIO16OFF
         * 192.168.1.6/GPIO17ON
         * 192.168.1.6/GPIO17OFF
         */
-                /* Based on the URL from the request, turn the LEDs ON or OFF */
-                if (request.indexOf("/GPIO16ON") != -1) {
-                    Serial.println("GPIO16 LED is ON");
-                    // digitalWrite(gpio16LEDPin, HIGH);
-                    // gpio16Value = HIGH;
+                    /* Based on the URL from the request, turn the LEDs ON or OFF */
+                    if (request.indexOf("/GPIO16ON") != -1) {
+                        Serial.println("GPIO16 LED is ON");
+                        // digitalWrite(gpio16LEDPin, HIGH);
+                        // gpio16Value = HIGH;
+                    }
+                    if (request.indexOf("/GPIO16OFF") != -1) {
+                        Serial.println("GPIO16 LED is OFF");
+                        // digitalWrite(gpio16LEDPin, LOW);
+                        // gpio16Value = LOW;
+                    }
+                    if (request.indexOf("/GPIO17ON") != -1) {
+                        Serial.println("GPIO17 LED is ON");
+                        // digitalWrite(gpio17LEDPin, HIGH);
+                        // gpio17Value = HIGH;
+                    }
+                    if (request.indexOf("/GPIO17OFF") != -1) {
+                        Serial.println("GPIO17 LED is OFF");
+                        // digitalWrite(gpio17LEDPin, LOW);
+                        // gpio17Value = LOW;
+                    }
+
+                    /* HTTP Response in the form of HTML Web Page */
+                    WebServerclient.println("HTTP/1.1 200 OK");
+                    WebServerclient.println("Content-Type: text/html");
+                    WebServerclient.println("Connection: close");
+                    WebServerclient.println();  //  IMPORTANT
+
+                    WebServerclient.println("<!DOCTYPE HTML>");
+                    WebServerclient.println("<html>");
+                    WebServerclient.println("<head>");
+                    WebServerclient.println("<meta http-equiv=\"refresh\" content=\"11\">");
+                    WebServerclient.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+                    WebServerclient.println("<link rel=\"icon\" href=\"data:,\">");
+                    WebServerclient.println("<style>");
+                    WebServerclient.println("html { font-family: Courier New; display: inline-block; margin: 0px auto; text-align: center;}");
+                    WebServerclient.println(".button {border: none; color: white; padding: 10px 20px; text-align: center;");
+                    WebServerclient.println("text-decoration: none; font-size: 25px; margin: 2px; cursor: pointer;}");
+                    WebServerclient.println(".button1 {background-color: #FF0000;}");
+                    WebServerclient.println(".button2 {background-color: #00FF00;}");
+
+                    // WebServerclient.println("meter { width: 50%; height: 75px; }");
+                    WebServerclient.println("meter { width: 50%; height: 75px; border: 1px solid #ccc; border-radius: 3px;}");
+                    // WebServerclient.println("meter::-webkit-meter-bar { background: none; background-color: whiteSmoke; box-shadow: 0 5px 5px -5px #333 inset;}");
+
+                    WebServerclient.println("</style>");
+                    WebServerclient.println("</head>");
+                    WebServerclient.println("<body>");
+                    WebServerclient.println("<h2>ESP32 CO2 Monitor</h2>");
+
+                    WebServerclient.print("<meter class=\"co2_meter\" min=\"400\" low=\"800\" high=\"1000\"max=\"1500\" optimum=\"500\" value=\"");
+                    WebServerclient.print(CO2);
+                    WebServerclient.println("\"></meter>");
+                    // if (gpio16Value == LOW) {
+                    WebServerclient.print("<h1>CO2 level(ppm): ");
+                    WebServerclient.print(CO2);
+                    WebServerclient.println("</h1>");
+                    if (CO2 <= MAX_SAFE_LEVEL) {
+                        WebServerclient.println("<h2>Level is Good</h2>");
+                    } else if (CO2 <= MAX_MID_LEVEL) {
+                        WebServerclient.println("<h2>Level could be better</h2>");
+                    } else if (CO2 > MAX_MID_LEVEL) {
+                        WebServerclient.println("<h2>WARNING High Level!</h2>");
+                    }
+                    WebServerclient.println("</body>");
+                    WebServerclient.println("</html>");
+
+                    break;
                 }
-                if (request.indexOf("/GPIO16OFF") != -1) {
-                    Serial.println("GPIO16 LED is OFF");
-                    // digitalWrite(gpio16LEDPin, LOW);
-                    // gpio16Value = LOW;
+                if (c == '\n') {
+                    currentLineIsBlank = true;
+                } else if (c != '\r') {
+                    currentLineIsBlank = false;
                 }
-                if (request.indexOf("/GPIO17ON") != -1) {
-                    Serial.println("GPIO17 LED is ON");
-                    // digitalWrite(gpio17LEDPin, HIGH);
-                    // gpio17Value = HIGH;
-                }
-                if (request.indexOf("/GPIO17OFF") != -1) {
-                    Serial.println("GPIO17 LED is OFF");
-                    // digitalWrite(gpio17LEDPin, LOW);
-                    // gpio17Value = LOW;
-                }
-
-                /* HTTP Response in the form of HTML Web Page */
-                WebServerclient.println("HTTP/1.1 200 OK");
-                WebServerclient.println("Content-Type: text/html");
-                WebServerclient.println("Connection: close");
-                WebServerclient.println();  //  IMPORTANT
-
-                WebServerclient.println("<!DOCTYPE HTML>");
-                WebServerclient.println("<html>");
-
-                WebServerclient.println("<head>");
-                WebServerclient.println("<meta http-equiv=\"refresh\" content=\"10\">");
-                WebServerclient.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-                WebServerclient.println("<link rel=\"icon\" href=\"data:,\">");
-
-                WebServerclient.println("<style>");
-
-                WebServerclient.println("html { font-family: Courier New; display: inline-block; margin: 0px auto; text-align: center;}");
-                WebServerclient.println(".button {border: none; color: white; padding: 10px 20px; text-align: center;");
-                WebServerclient.println("text-decoration: none; font-size: 25px; margin: 2px; cursor: pointer;}");
-                WebServerclient.println(".button1 {background-color: #FF0000;}");
-                WebServerclient.println(".button2 {background-color: #00FF00;}");
-
-                // WebServerclient.println("meter { width: 50%; height: 75px; }");
-                WebServerclient.println("meter { width: 50%; height: 75px; border: 1px solid #ccc; border-radius: 3px;}");
-                // WebServerclient.println("meter::-webkit-meter-bar { background: none; background-color: whiteSmoke; box-shadow: 0 5px 5px -5px #333 inset;}");
-
-                WebServerclient.println("</style>");
-                WebServerclient.println("</head>");
-                WebServerclient.println("<body>");
-                WebServerclient.println("<h2>ESP32 CO2 Monitor</h2>");                                                                                                                           
-
-                WebServerclient.print("<meter class=\"co2_meter\" min=\"400\" low=\"800\" high=\"1000\"max=\"1500\" optimum=\"500\" value=\"");
-                WebServerclient.print(CO2);
-                WebServerclient.println("\"></meter>");
-                // if (gpio16Value == LOW) {
-                WebServerclient.print("<h1>CO2 level(ppm): ");
-                WebServerclient.print(CO2);
-                WebServerclient.println("</h1>");
-                if(CO2 <= MAX_SAFE_LEVEL){
-                    WebServerclient.println("<h2>Level is Good</h2>");
-                }else
-                if(CO2 <= MAX_MID_LEVEL){
-                    WebServerclient.println("<h2>Level could be better</h2>");
-                }else
-                if(CO2 > MAX_MID_LEVEL){
-                    WebServerclient.println("<h2>WARNING High Level!</h2>");
-                }                
-                WebServerclient.println("</body>");
-                WebServerclient.println("</html>");
-
-                break;
+                // WebServerclient.print("\n");
             }
-            if (c == '\n') {
-                currentLineIsBlank = true;
-            } else if (c != '\r') {
-                currentLineIsBlank = false;
-            }
-            // WebServerclient.print("\n");
         }
-    }
 
-    delay(1);
-    request = "";
-    // WebServerclient.flush();
-    WebServerclient.stop();
-    Serial.println("WebServerclient disconnected");
-    Serial.print("\n");
+        delay(2);
+        request = "";
+        // WebServerclient.flush();
+        WebServerclient.stop();
+        Serial.println("WebServerclient disconnected");
+        Serial.print("\n");
+        delay(2);
+    }
 }
