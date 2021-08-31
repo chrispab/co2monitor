@@ -289,7 +289,9 @@ void loop() {
 
                 client.println("<h2>ESP32 CO2 Monitor</h2>");                                                                                                                           
 
-                client.println("<meter class=\"co2_meter\" min=\"400\" low=\"800\" high=\"1000\"max=\"1500\" optimum=\"500\" value=\"788\"></meter>");
+                client.print("<meter class=\"co2_meter\" min=\"400\" low=\"800\" high=\"1000\"max=\"1500\" optimum=\"500\" value=\"");
+                client.print(CO2);
+                client.println("\"></meter>");
                 // if (gpio16Value == LOW) {
                 client.print("<h1>CO2 level(ppm): ");
                 client.print(CO2);
