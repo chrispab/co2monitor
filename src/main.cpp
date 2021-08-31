@@ -187,7 +187,6 @@ void setup() {
     getDataTimer = millis() - 11000;
 }
 
-
 int CO2 = 100;
 
 // Current time
@@ -306,12 +305,18 @@ void loop() {
                     WebServerclient.println(".button2 {background-color: #00FF00;}");
 
                     // WebServerclient.println("meter { width: 50%; height: 75px; }");
-                    WebServerclient.println("meter { width: 50%; height: 75px; border: 1px solid #ccc; border-radius: 3px;}");
+                    WebServerclient.println("meter { width: 75%; height: 75px; border: 1px solid #ccc; border-radius: 3px;}");
                     // WebServerclient.println("meter::-webkit-meter-bar { background: none; background-color: whiteSmoke; box-shadow: 0 5px 5px -5px #333 inset;}");
+
+                    WebServerclient.println(".main-container {width: 75%; background-color: #cccccc; margin: auto;padding: 10px;border-radius: 15px; -webkit-box-shadow: 5px 5px 15px 5px #000000; box-shadow: 5px 5px 15px 5px #000000;}");
+
 
                     WebServerclient.println("</style>");
                     WebServerclient.println("</head>");
                     WebServerclient.println("<body>");
+
+                    WebServerclient.print("<div class=\"main-container\">");
+
                     WebServerclient.println("<h2>ESP32 CO2 Monitor</h2>");
 
                     WebServerclient.print("<meter class=\"co2_meter\" min=\"400\" low=\"800\" high=\"1000\"max=\"1500\" optimum=\"500\" value=\"");
@@ -328,6 +333,9 @@ void loop() {
                     } else if (CO2 > MAX_MID_LEVEL) {
                         WebServerclient.println("<h2>WARNING High Level! Increase ventilation now</h2>");
                     }
+
+                    WebServerclient.print("</div>");
+
                     WebServerclient.println("</body>");
                     WebServerclient.println("</html>");
 
