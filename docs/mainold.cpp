@@ -2,12 +2,10 @@
 // #include <SoftwareSerial.h>  // Remove if using HardwareSerial
 // #include "SoftwareSerial.h"
 
+#include <ESPAsyncWebServer.h>
 #include <PubSubClient.h>
 #include <SPIFFS.h>
-#include <AsyncTCP.h>
-
 #include <WiFi.h>
-#include <ESPAsyncWebServer.h>
 
 #include "LedFader.h"
 #include "MHZ19.h"
@@ -68,9 +66,9 @@ void setup_wifi() {
     Serial.print("Connecting to ");
     Serial.println(ssid);
 
-    WiFi.mode(WIFI_STA);
-    // WiFi.mode(WIFI_MODE_APSTA);
-    // WiFi.softAP(soft_ap_ssid, soft_ap_password);
+    // WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_MODE_APSTA);
+    WiFi.softAP(soft_ap_ssid, soft_ap_password);
     WiFi.begin(ssid, password);
 
     while (WiFi.status() != WL_CONNECTED) {
@@ -145,14 +143,14 @@ String readCO2Sensor() {
         return String(CO2ppm);
     }
 }
-#define FORMAT_SPIFFS_IF_FAILED true
+
 void setup() {
     delay(2000);
     heartBeatLED.begin();
     Serial.begin(MONITOR_SPEED);  // Device to serial monitor feedback
 
     // Initialize SPIFFS
-    if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
+    if (!SPIFFS.begin()) {
         Serial.println("An Error has occurred while mounting SPIFFS");
         return;
     }
@@ -210,25 +208,7 @@ void setup() {
     Serial.print("\n");
     Serial.println("Use the above URL in your Browser to access the CO2 monitor Web Server\n");
 
-    // getDataTimer = millis() - 11000;
-      // Route for root / web page
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(SPIFFS, "/index.html");
-  });
-  server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", readCO2Sensor().c_str());
-  });
-  server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", readCO2Sensor().c_str());
-  });
-  server.on("/pressure", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", readCO2Sensor().c_str());
-  });
-    // server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    //     request->send(200, "text/plain", "Hello, world");
-    // });
-  // Start server
-  server.begin();
+    getDataTimer = millis() - 11000;
 }
 
 int CO2 = 100;
@@ -264,7 +244,7 @@ void loop() {
         if (now - lastMsg > 2000) {
             lastMsg = now;
             ++value;
-            snprintf(msg, MSG_BUFFER_SIZE, "%d", CO2);
+            snprintf(msg, MSG_BUFFER_SIZE, "%ld", CO2);
             Serial.print("MQTT Publish message: co2sensor_01/co2ppm : ");
             Serial.println(msg);
             MQTTclient.publish("co2sensor_01/co2ppm", msg);
@@ -276,24 +256,109 @@ void loop() {
 
     //!web section
 
-//   // Route for root / web page
-// //   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-// //     request->send(SPIFFS, "/index.html");
-// //   });
-// //   server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request){
-// //     request->send_P(200, "text/plain", readCO2Sensor().c_str());
-// //   });
-// //   server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request){
-// //     request->send_P(200, "text/plain", readCO2Sensor().c_str());
-// //   });
-// //   server.on("/pressure", HTTP_GET, [](AsyncWebServerRequest *request){
-// //     request->send_P(200, "text/plain", readCO2Sensor().c_str());
-// //   });
-//     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-//         request->send(200, "text/plain", "Hello, world");
-//     });
-//   // Start server
-//   server.begin();
-}
+    WiFiClient WebServerclient = espServer.available(); /* Listen for incoming clients */
+    if (!WebServerclient) {
+        return;
+    }
 
-// pio run -t uploadfs
+    Serial.println("\nNew WebServerclient!!!");
+    boolean currentLineIsBlank = true;
+
+    if (WebServerclient) {  // If a new client connects,
+        currentTime = millis();
+        previousTime = currentTime;
+        // while (WebServerclient.connected()) {
+        while (WebServerclient.connected() && currentTime - previousTime <= timeoutTime) {  // loop while the client's connected
+            currentTime = millis();
+
+            if (WebServerclient.available()) {
+                char c = WebServerclient.read();
+                request += c;
+                Serial.write(c);
+                /* if you've gotten to the end of the line (received a newline */
+                /* character) and the line is blank, the http request has ended, */
+                /* so you can send a reply */
+                if (c == '\n' && currentLineIsBlank) {
+                    /* Extract the URL of the request */
+                    /* We have four URLs. If IP Address is 192.168.1.6 (for example),
+        * then URLs are: 
+        * 192.168.1.6/GPIO16ON
+        * 192.168.1.6/GPIO16OFF
+        * 192.168.1.6/GPIO17ON
+        * 192.168.1.6/GPIO17OFF
+        */
+                    /* Based on the URL from the request, turn the LEDs ON or OFF */
+
+                    /* HTTP Response in the form of HTML Web Page */
+                    WebServerclient.println("HTTP/1.1 200 OK");
+                    WebServerclient.println("Content-Type: text/html");
+                    WebServerclient.println("Connection: close");
+                    WebServerclient.println();  //  IMPORTANT
+
+                    WebServerclient.println("<!DOCTYPE HTML>");
+                    WebServerclient.println("<html>");
+                    WebServerclient.println("<head>");
+                    WebServerclient.println("<meta http-equiv=\"refresh\" content=\"11\">");
+                    WebServerclient.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+                    WebServerclient.println("<link rel=\"icon\" href=\"data:,\">");
+                    WebServerclient.println("<style>");
+                    WebServerclient.println("html { font-family: Courier New; display: inline-block; margin: 0px auto; text-align: center;}");
+                    WebServerclient.println(".button {border: none; color: white; padding: 10px 20px; text-align: center;");
+                    WebServerclient.println("text-decoration: none; font-size: 25px; margin: 2px; cursor: pointer;}");
+                    WebServerclient.println(".button1 {background-color: #FF0000;}");
+                    WebServerclient.println(".button2 {background-color: #00FF00;}");
+
+                    // WebServerclient.println("meter { width: 50%; height: 75px; }");
+                    WebServerclient.println("meter { width: 75%; height: 75px; border: 1px solid #ccc; border-radius: 3px;}");
+                    // WebServerclient.println("meter::-webkit-meter-bar { background: none; background-color: whiteSmoke; box-shadow: 0 5px 5px -5px #333 inset;}");
+
+                    WebServerclient.println(".main-container {width: 75%; background-color: #cccccc; margin: auto;padding: 10px;border-radius: 15px; -webkit-box-shadow: 5px 5px 15px 5px #000000; box-shadow: 5px 5px 15px 5px #000000;}");
+
+                    WebServerclient.println("</style>");
+                    WebServerclient.println("</head>");
+                    WebServerclient.println("<body>");
+
+                    WebServerclient.print("<div class=\"main-container\">");
+
+                    WebServerclient.println("<h2>ESP32 CO2 Monitor</h2>");
+
+                    WebServerclient.print("<meter class=\"co2_meter\" min=\"400\" low=\"800\" high=\"1000\"max=\"1500\" optimum=\"500\" value=\"");
+                    WebServerclient.print(CO2);
+                    WebServerclient.println("\"></meter>");
+                    // if (gpio16Value == LOW) {
+                    WebServerclient.print("<h1>CO2 level(ppm): ");
+                    WebServerclient.print(CO2);
+                    WebServerclient.println("</h1>");
+                    if (CO2 <= MAX_SAFE_LEVEL) {
+                        WebServerclient.println("<h2>Level is Good</h2>");
+                    } else if (CO2 <= MAX_MID_LEVEL) {
+                        WebServerclient.println("<h2>Level mid range - increase ventilation</h2>");
+                    } else if (CO2 > MAX_MID_LEVEL) {
+                        WebServerclient.println("<h2>WARNING High Level! Increase ventilation now</h2>");
+                    }
+
+                    WebServerclient.print("</div>");
+
+                    WebServerclient.println("</body>");
+                    WebServerclient.println("</html>");
+
+                    break;
+                }
+                if (c == '\n') {
+                    currentLineIsBlank = true;
+                } else if (c != '\r') {
+                    currentLineIsBlank = false;
+                }
+                // WebServerclient.print("\n");
+            }
+        }
+
+        // delay(2);
+        request = "";
+        WebServerclient.flush();
+        WebServerclient.stop();
+        Serial.println("WebServerclient disconnected");
+        Serial.print("\n");
+        // delay(2);
+    }
+}
