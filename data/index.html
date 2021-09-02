@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
       <title>CO2 Monitor</title>
       <!-- <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"/> -->
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -37,13 +38,13 @@
       }
 
       .main-container {
-        width: 80%;
+        /* width: 80%; */
         background-color: #cccccc;
-        margin: auto;
+        margin: 10px;
         padding: 10px;
         border-radius: 15px;
-        -webkit-box-shadow: 5px 5px 15px 5px #000000;
-        box-shadow: 5px 5px 15px 5px #000000;
+        -webkit-box-shadow: 5px 5px 5px 5px #243827;
+        box-shadow: 5px 5px 5px 5px #243827;
       }
 
       canvas {
@@ -95,9 +96,7 @@
         data-value-box="true"
         data-animation-rule="bounce"
         data-animation-duration="500"
-        data-font-value="Led"
         data-animated-value="true"
-        data-color-bar-progress="rgba(50,200,50,.8)"
       ></canvas>
 
       <div>
@@ -195,89 +194,89 @@
       xhttp.send();
     }, 15000);
 
-    var chartH = new Highcharts.Chart({
-      chart: { renderTo: "chart-humidity" },
-      title: { text: "BME280 Humidity" },
-      series: [
-        {
-          showInLegend: false,
-          data: [],
-        },
-      ],
-      plotOptions: {
-        line: {
-          animation: false,
-          dataLabels: { enabled: true },
-        },
-      },
-      xAxis: {
-        type: "datetime",
-        dateTimeLabelFormats: { second: "%H:%M:%S" },
-      },
-      yAxis: {
-        title: { text: "Humidity (%)" },
-      },
-      credits: { enabled: false },
-    });
-    setInterval(function () {
-      var xhttp = new XMLHttpRequest();
-      xhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-          var x = new Date().getTime(),
-            y = parseFloat(this.responseText);
-          //console.log(this.responseText);
-          if (chartH.series[0].data.length > 40) {
-            chartH.series[0].addPoint([x, y], true, true, true);
-          } else {
-            chartH.series[0].addPoint([x, y], true, false, true);
-          }
-        }
-      };
-      xhttp.open("GET", "/humidity", true);
-      xhttp.send();
-    }, 30000);
+    // var chartH = new Highcharts.Chart({
+    //   chart: { renderTo: "chart-humidity" },
+    //   title: { text: "BME280 Humidity" },
+    //   series: [
+    //     {
+    //       showInLegend: false,
+    //       data: [],
+    //     },
+    //   ],
+    //   plotOptions: {
+    //     line: {
+    //       animation: false,
+    //       dataLabels: { enabled: true },
+    //     },
+    //   },
+    //   xAxis: {
+    //     type: "datetime",
+    //     dateTimeLabelFormats: { second: "%H:%M:%S" },
+    //   },
+    //   yAxis: {
+    //     title: { text: "Humidity (%)" },
+    //   },
+    //   credits: { enabled: false },
+    // });
+    // setInterval(function () {
+    //   var xhttp = new XMLHttpRequest();
+    //   xhttp.onreadystatechange = function () {
+    //     if (this.readyState == 4 && this.status == 200) {
+    //       var x = new Date().getTime(),
+    //         y = parseFloat(this.responseText);
+    //       //console.log(this.responseText);
+    //       if (chartH.series[0].data.length > 40) {
+    //         chartH.series[0].addPoint([x, y], true, true, true);
+    //       } else {
+    //         chartH.series[0].addPoint([x, y], true, false, true);
+    //       }
+    //     }
+    //   };
+    //   xhttp.open("GET", "/humidity", true);
+    //   xhttp.send();
+    // }, 30000);
 
-    var chartP = new Highcharts.Chart({
-      chart: { renderTo: "chart-pressure" },
-      title: { text: "BME280 Pressure" },
-      series: [
-        {
-          showInLegend: false,
-          data: [],
-        },
-      ],
-      plotOptions: {
-        line: {
-          animation: false,
-          dataLabels: { enabled: true },
-        },
-        series: { color: "#18009c" },
-      },
-      xAxis: {
-        type: "datetime",
-        dateTimeLabelFormats: { second: "%H:%M:%S" },
-      },
-      yAxis: {
-        title: { text: "Pressure (hPa)" },
-      },
-      credits: { enabled: false },
-    });
-    setInterval(function () {
-      var xhttp = new XMLHttpRequest();
-      xhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-          var x = new Date().getTime(),
-            y = parseFloat(this.responseText);
-          //console.log(this.responseText);
-          if (chartP.series[0].data.length > 40) {
-            chartP.series[0].addPoint([x, y], true, true, true);
-          } else {
-            chartP.series[0].addPoint([x, y], true, false, true);
-          }
-        }
-      };
-      xhttp.open("GET", "/pressure", true);
-      xhttp.send();
-    }, 30000);
+    // var chartP = new Highcharts.Chart({
+    //   chart: { renderTo: "chart-pressure" },
+    //   title: { text: "BME280 Pressure" },
+    //   series: [
+    //     {
+    //       showInLegend: false,
+    //       data: [],
+    //     },
+    //   ],
+    //   plotOptions: {
+    //     line: {
+    //       animation: false,
+    //       dataLabels: { enabled: true },
+    //     },
+    //     series: { color: "#18009c" },
+    //   },
+    //   xAxis: {
+    //     type: "datetime",
+    //     dateTimeLabelFormats: { second: "%H:%M:%S" },
+    //   },
+    //   yAxis: {
+    //     title: { text: "Pressure (hPa)" },
+    //   },
+    //   credits: { enabled: false },
+    // });
+    // setInterval(function () {
+    //   var xhttp = new XMLHttpRequest();
+    //   xhttp.onreadystatechange = function () {
+    //     if (this.readyState == 4 && this.status == 200) {
+    //       var x = new Date().getTime(),
+    //         y = parseFloat(this.responseText);
+    //       //console.log(this.responseText);
+    //       if (chartP.series[0].data.length > 40) {
+    //         chartP.series[0].addPoint([x, y], true, true, true);
+    //       } else {
+    //         chartP.series[0].addPoint([x, y], true, false, true);
+    //       }
+    //     }
+    //   };
+    //   xhttp.open("GET", "/pressure", true);
+    //   xhttp.send();
+    // }, 30000);
   </script>
 </html>
