@@ -1,219 +1,282 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
-
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <head>
+      <title>CO2 Monitor</title>
+      <!-- <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"/> -->
+      <link href="data:image/x-icon;base64,AAABAAEAEBAAAAAAAABoBQAAFgAAACgAAAAQAAAAIAAAAAEACAAAAAAAAAEAAAAAAAAAAAAAAAEAAAAAAAAAAAAA////AACYxwAxtWQAGZRIAACm2QArzGkABHoxAGlpaQAAtOsAaPefAEnjhAAnqFgAAImzAAuHOgAAw/8AAGKAADbHbQAwMDAAW/CUAAB1mQCoqKgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIFQAAAAAAAAcOBAQAAAASCBUAAAAHBw4OBAQMDAMAEggVAAAQEBQUBAQMDAMDBgASCAAAEBAUFBQNDAMDAwYGABIAAAcHFBQNDQ0CAwYGCwAAAAcHDg4EDQ0CAgIFCwsKAAAHDg4EBAwDAgIFBQUJCgAABw4EBAwMAwMGBQUJCQkAAAcOBAQMAwMDBgYLCQkPDwAABAQMDAMDBgYLCxMKDw8AAAQMDAMDAwYLCwsTCg8PABIIDAwDAxEGCwsTCgAAABIIFQgDAwMRCxMTEwgSAAAIFQEVCBIDEQsTEggVCBIAEggVCBIAAAAAEggVARUIEgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" rel="icon" type="image/x-icon" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="//cdn.rawgit.com/Mikhus/canvas-gauges/gh-pages/download/2.1.7/radial/gauge.min.js"></script>
     <style>
-        body {
-            min-width: 310px;
-            max-width: 80%;
-            /* height: 400px; */
-            margin: auto;
-        }
+      body {
+        min-width: 310px;
+        max-width: 80%;
+        /* height: 400px; */
+        margin: auto;
+      }
 
-        h3 {
-            font-family: Arial;
-            font-size: 2rem;
-            text-align: center;
-        }
+      h3 {
+        font-family: Arial;
+        font-size: 2rem;
+        text-align: center;
+      }
 
-        meter {
-            width: 40%;
-            height: 50px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
+      meter {
+        width: 40%;
+        height: 50px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
 
-            padding-left: 0;
-            padding-right: 0;
-            margin-left: auto;
-            margin-right: auto;
-            display: block;
-            /* width: 800px; */
-        }
+        padding-left: 0;
+        padding-right: 0;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+        /* width: 800px; */
+      }
 
-        .main-container {
-            width: 80%;
-            background-color: #cccccc;
-            margin: auto;
-            padding: 10px;
-            border-radius: 15px;
-            -webkit-box-shadow: 5px 5px 15px 5px #000000;
-            box-shadow: 5px 5px 15px 5px #000000;
-        }
+      .main-container {
+        width: 80%;
+        background-color: #cccccc;
+        margin: auto;
+        padding: 10px;
+        border-radius: 15px;
+        -webkit-box-shadow: 5px 5px 15px 5px #000000;
+        box-shadow: 5px 5px 15px 5px #000000;
+      }
 
-        canvas {
-            padding-left: 0;
-            padding-right: 0;
-            margin-left: auto;
-            margin-right: auto;
-            display: block;
-            width: 800px;
-        }
+      canvas {
+        padding-left: 0;
+        padding-right: 0;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+        width: 800px;
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <div class="main-container">
-        <h3>CO2 Monitor</h3>
+      <h3>CO2 Monitor</h3>
 
-        <!-- Injecting radial gauge -->
-        <canvas data-type="radial-gauge" data-width="250" data-height="250" data-units="CO2 ppm" data-title="false"
-            data-value="600" data-min-value="400" data-max-value="1800"
-            data-major-ticks="400,600,800,1000,1200,1400,1600,1800" data-minor-ticks="2" data-stroke-ticks="false"
-            data-value-int="1" data-value-dec="0" data-font-value="Led"
-            data-highlights='[
+      <!-- Injecting radial gauge -->
+      <canvas
+        id="co2-gauge"
+        data-type="radial-gauge"
+        data-width="250"
+        data-height="250"
+        data-units="CO2 ppm"
+        data-title="false"
+        data-value="400"
+        data-min-value="400"
+        data-max-value="1800"
+        data-major-ticks="400,600,800,1000,1200,1400,1600,1800"
+        data-minor-ticks="2"
+        data-stroke-ticks="false"
+        data-value-int="1"
+        data-value-dec="0"
+        data-font-value="Led"
+        data-highlights='[
       { "from": 400, "to": 1000, "color": "rgba(0,255,0,.5)" },
       { "from": 1000, "to": 1400, "color": "rgba(255,255,0,.5)" },
       { "from": 1400, "to": 1800, "color": "rgba(255,0,0,.5)" }
 
-  ]' data-color-plate="#222" data-color-major-ticks="#f5f5f5" data-color-minor-ticks="#ddd" data-color-title="#fff"
-            data-color-units="#ccc" data-color-numbers="#eee" data-color-needle-start="rgba(240, 128, 128, 1)"
-            data-color-needle-end="rgba(255, 160, 122, .9)" data-value-box="true" data-animation-rule="bounce"
-            data-animation-duration="500" data-font-value="Led" data-animated-value="true"
-            data-color-bar-progress="rgba(50,200,50,.8)"></canvas>
+  ]'
+        data-color-plate="#222"
+        data-color-major-ticks="#f5f5f5"
+        data-color-minor-ticks="#ddd"
+        data-color-title="#fff"
+        data-color-units="#ccc"
+        data-color-numbers="#eee"
+        data-color-needle-start="rgba(240, 128, 128, 1)"
+        data-color-needle-end="rgba(255, 160, 122, .9)"
+        data-value-box="true"
+        data-animation-rule="bounce"
+        data-animation-duration="500"
+        data-font-value="Led"
+        data-animated-value="true"
+        data-color-bar-progress="rgba(50,200,50,.8)"
+      ></canvas>
 
-
-        <div><meter class="co2_meter" id="meter_value" min="400" low="1000" high="1400" max="1800" optimum="500"
-                value="500"></meter></div>
-        <h3 id="co2_level">CO2 level(ppm): </h3>
-        <div id="chart-temperature" class="container"></div>
-        <!-- <div id="chart-temperature" class="container"></div> -->
-        <!-- <div id="chart-humidity" class="container"></div>
+      <div>
+        <meter
+          class="co2_meter"
+          id="meter_value"
+          min="400"
+          low="1000"
+          high="1400"
+          max="1800"
+          optimum="500"
+          value="500"
+        ></meter>
+      </div>
+      <h3 id="co2_level">CO2 level(ppm):</h3>
+      <div id="chart-temperature" class="container"></div>
+      <!-- <div id="chart-temperature" class="container"></div> -->
+      <!-- <div id="chart-humidity" class="container"></div>
   <div id="chart-pressure" class="container"></div> -->
     </div>
-</body>
-<script>
+  </body>
+  <script>
     var chartT = new Highcharts.Chart({
-        chart: { renderTo: 'chart-temperature' },
-        title: { text: 'CO2 Level - ppm' },
-        series: [{
-            showInLegend: false,
-            data: []
-        }],
-        plotOptions: {
-            line: {
-                animation: false,
-                dataLabels: { enabled: true }
-            },
-            series: { color: '#059e8a' }
+      chart: { renderTo: "chart-temperature" },
+      title: { text: "CO2 Level - ppm" },
+      series: [
+        {
+          showInLegend: false,
+          data: [],
         },
-        xAxis: {
-            type: 'datetime',
-            dateTimeLabelFormats: { second: '%H:%M:%S' }
+      ],
+      plotOptions: {
+        line: {
+          animation: false,
+          dataLabels: { enabled: false },
         },
-        yAxis: {
-            title: { text: 'CO2 - ppm' }
-        },
-        credits: { enabled: false }
+        series: { color: "#000000" },
+      },
+      xAxis: {
+        type: "datetime",
+        dateTimeLabelFormats: { second: "%H:%M:%S" },
+      },
+      yAxis: {
+        title: { text: "CO2 - ppm" },
+        plotBands: [
+          {
+            color: "#9cc940", // Color value
+            from: 400, // Start of the plot band
+            to: 1000, // End of the plot band
+          },
+          {
+            color: "#d1ccd3", // Color value
+            from: 1000, // Start of the plot band
+            to: 1400, // End of the plot band
+          },
+          {
+            color: "#d13d44", // Color value
+            from: 1400, // Start of the plot band
+            to: 1800, // End of the plot band
+          },
+        ],
+      },
+
+      credits: { enabled: false },
     });
+    Highcharts.setOptions({
+        global: { useUTC: false }
+    });
+
     setInterval(function () {
-        var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function () {
-            if (this.readyState == 4 && this.status == 200) {
-                var x = (new Date()).getTime(),
-                    y = parseInt(this.responseText);
-                console.log(this.responseText);
-                if (chartT.series[0].data.length > 1440) {
-                    chartT.series[0].addPoint([x, y], true, true, true);
-                } else {
-                    chartT.series[0].addPoint([x, y], true, false, true);
-                }
-                // var s = document.getElementById(meter_value).value;
-                // s.value = y;
-                document.getElementById("meter_value").value = y;
-                document.getElementById("co2_level").innerHTML = y;
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          var x = new Date().getTime(),
+            y = parseInt(this.responseText);
+          console.log(this.responseText);
+          if (chartT.series[0].data.length > 1440) {
+            chartT.series[0].addPoint([x, y], true, true, true);
+          } else {
+            chartT.series[0].addPoint([x, y], true, false, true);
+          }
+          // var s = document.getElementById(meter_value).value;
+          // s.value = y;
+          document.getElementById("meter_value").value = y;
+          document.getElementById("co2_level").innerHTML = y;
 
-                var gaugeElement = document.getElementsByTagName('canvas')[0];
+          var gaugeElement = document.getElementsByTagName("canvas")[0];
 
-                gaugeElement.setAttribute('data-value', y);
-            }
-        };
-        xhttp.open("GET", "/temperature", true);
-        xhttp.send();
+          gaugeElement.setAttribute("data-value", y);
+          var gauge = document.gauges.get("co2-gauge");
+          gauge.update();
+        }
+      };
+      xhttp.open("GET", "/temperature", true);
+      xhttp.send();
     }, 15000);
 
     var chartH = new Highcharts.Chart({
-        chart: { renderTo: 'chart-humidity' },
-        title: { text: 'BME280 Humidity' },
-        series: [{
-            showInLegend: false,
-            data: []
-        }],
-        plotOptions: {
-            line: {
-                animation: false,
-                dataLabels: { enabled: true }
-            }
+      chart: { renderTo: "chart-humidity" },
+      title: { text: "BME280 Humidity" },
+      series: [
+        {
+          showInLegend: false,
+          data: [],
         },
-        xAxis: {
-            type: 'datetime',
-            dateTimeLabelFormats: { second: '%H:%M:%S' }
+      ],
+      plotOptions: {
+        line: {
+          animation: false,
+          dataLabels: { enabled: true },
         },
-        yAxis: {
-            title: { text: 'Humidity (%)' }
-        },
-        credits: { enabled: false }
+      },
+      xAxis: {
+        type: "datetime",
+        dateTimeLabelFormats: { second: "%H:%M:%S" },
+      },
+      yAxis: {
+        title: { text: "Humidity (%)" },
+      },
+      credits: { enabled: false },
     });
     setInterval(function () {
-        var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function () {
-            if (this.readyState == 4 && this.status == 200) {
-                var x = (new Date()).getTime(),
-                    y = parseFloat(this.responseText);
-                //console.log(this.responseText);
-                if (chartH.series[0].data.length > 40) {
-                    chartH.series[0].addPoint([x, y], true, true, true);
-                } else {
-                    chartH.series[0].addPoint([x, y], true, false, true);
-                }
-            }
-        };
-        xhttp.open("GET", "/humidity", true);
-        xhttp.send();
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          var x = new Date().getTime(),
+            y = parseFloat(this.responseText);
+          //console.log(this.responseText);
+          if (chartH.series[0].data.length > 40) {
+            chartH.series[0].addPoint([x, y], true, true, true);
+          } else {
+            chartH.series[0].addPoint([x, y], true, false, true);
+          }
+        }
+      };
+      xhttp.open("GET", "/humidity", true);
+      xhttp.send();
     }, 30000);
 
     var chartP = new Highcharts.Chart({
-        chart: { renderTo: 'chart-pressure' },
-        title: { text: 'BME280 Pressure' },
-        series: [{
-            showInLegend: false,
-            data: []
-        }],
-        plotOptions: {
-            line: {
-                animation: false,
-                dataLabels: { enabled: true }
-            },
-            series: { color: '#18009c' }
+      chart: { renderTo: "chart-pressure" },
+      title: { text: "BME280 Pressure" },
+      series: [
+        {
+          showInLegend: false,
+          data: [],
         },
-        xAxis: {
-            type: 'datetime',
-            dateTimeLabelFormats: { second: '%H:%M:%S' }
+      ],
+      plotOptions: {
+        line: {
+          animation: false,
+          dataLabels: { enabled: true },
         },
-        yAxis: {
-            title: { text: 'Pressure (hPa)' }
-        },
-        credits: { enabled: false }
+        series: { color: "#18009c" },
+      },
+      xAxis: {
+        type: "datetime",
+        dateTimeLabelFormats: { second: "%H:%M:%S" },
+      },
+      yAxis: {
+        title: { text: "Pressure (hPa)" },
+      },
+      credits: { enabled: false },
     });
     setInterval(function () {
-        var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function () {
-            if (this.readyState == 4 && this.status == 200) {
-                var x = (new Date()).getTime(),
-                    y = parseFloat(this.responseText);
-                //console.log(this.responseText);
-                if (chartP.series[0].data.length > 40) {
-                    chartP.series[0].addPoint([x, y], true, true, true);
-                } else {
-                    chartP.series[0].addPoint([x, y], true, false, true);
-                }
-            }
-        };
-        xhttp.open("GET", "/pressure", true);
-        xhttp.send();
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          var x = new Date().getTime(),
+            y = parseFloat(this.responseText);
+          //console.log(this.responseText);
+          if (chartP.series[0].data.length > 40) {
+            chartP.series[0].addPoint([x, y], true, true, true);
+          } else {
+            chartP.series[0].addPoint([x, y], true, false, true);
+          }
+        }
+      };
+      xhttp.open("GET", "/pressure", true);
+      xhttp.send();
     }, 30000);
-</script>
-
+  </script>
 </html>
