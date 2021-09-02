@@ -239,6 +239,7 @@ void setup() {
     });
     server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest* request) {
         request->send_P(200, "text/plain", readCO2Sensor().c_str());
+        Serial.println("temperature readCO2Sensor() called from ajax");
     });
     server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest* request) {
         request->send_P(200, "text/plain", readCO2Sensor().c_str());
