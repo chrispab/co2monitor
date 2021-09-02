@@ -2,12 +2,11 @@
 // #include <SoftwareSerial.h>  // Remove if using HardwareSerial
 // #include "SoftwareSerial.h"
 
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 #include <PubSubClient.h>
 #include <SPIFFS.h>
-#include <AsyncTCP.h>
-
 #include <WiFi.h>
-#include <ESPAsyncWebServer.h>
 
 #include "LedFader.h"
 #include "MHZ19.h"
@@ -34,11 +33,14 @@ LedFader heartBeatLED(ESP32_ONBOARD_BLUE_LED_PIN, 1, 0, 255, HEART_BEAT_TIME, tr
 
 unsigned long getDataTimer = 0;
 
+const char* work_ssid = "btf_staff";
+const char* work_password = "Rei1Vnbu!";
+
 const char* ssid = "notwork";
 const char* password = "a new router can solve many problems";
 
 const char* soft_ap_ssid = "CO2 Monitor";
-const char* soft_ap_password = "testpassword";
+const char* soft_ap_password = "password";
 
 // const char* mqtt_server = "iotstack.local";
 const char* mqtt_server = "192.168.0.100";
@@ -71,11 +73,26 @@ void setup_wifi() {
     WiFi.mode(WIFI_STA);
     // WiFi.mode(WIFI_MODE_APSTA);
     // WiFi.softAP(soft_ap_ssid, soft_ap_password);
-    WiFi.begin(ssid, password);
 
-    while (WiFi.status() != WL_CONNECTED) {
+    //try work wifi first
+    WiFi.begin(work_ssid, work_password);
+    //try to connect for 5 secs
+    boolean timedOut = false;
+    int counter = 0;
+    while ((WiFi.status() != WL_CONNECTED) && !timedOut) {
         delay(500);
-        Serial.print(".");
+        Serial.print("try work wifi.");
+        counter++;
+        if (counter == 10) timedOut = true;
+    }
+
+    if (WiFi.status() != WL_CONNECTED) {
+        WiFi.begin(ssid, password);
+
+        while (WiFi.status() != WL_CONNECTED) {
+            delay(500);
+            Serial.print("try home wifi.");
+        }
     }
 
     randomSeed(micros());
@@ -110,26 +127,30 @@ void callback(char* topic, byte* payload, unsigned int length) {
 }
 
 void reconnect() {
-    // Loop until we're reconnected
-    while (!MQTTclient.connected()) {
+    // Loop until we're reconnected or timed out
+    // try for 3 secs to connect
+    boolean timedOut = false;
+    int startTime = millis();
+    while (!MQTTclient.connected() && !timedOut) {
         Serial.print("Attempting MQTT connection...");
         // Create a random client ID
         String clientId = "ESP8266Client-";
         clientId += String(random(0xffff), HEX);
         // Attempt to connect
         if (MQTTclient.connect(clientId.c_str())) {
-            Serial.println("connected");
+            Serial.println("connected to MQTT server");
             // Once connected, publish an announcement...
             MQTTclient.publish("co2sensor", "hello co2");
             // ... and resubscribe
-            MQTTclient.subscribe("inTopic");
+            // MQTTclient.subscribe("inTopic");
         } else {
-            Serial.print("failed, rc=");
+            Serial.print("failed to connect to MQTT server, rc=");
             Serial.print(MQTTclient.state());
-            Serial.println(" try again in 5 seconds");
+            Serial.println(" try again in 1 seconds");
             // Wait 5 seconds before retrying
-            delay(5000);
+            delay(1000);
         }
+        if ((millis() - startTime) >= 3000) timedOut = true;
     }
 }
 //MQTT end
@@ -141,6 +162,7 @@ String readCO2Sensor() {
         Serial.println("Failed to read from CO2 sensor!");
         return String(CO2ppm);
     } else {
+        Serial.print("Sensor reads : ");
         Serial.println(CO2ppm);
         return String(CO2ppm);
     }
@@ -211,24 +233,27 @@ void setup() {
     Serial.println("Use the above URL in your Browser to access the CO2 monitor Web Server\n");
 
     // getDataTimer = millis() - 11000;
-      // Route for root / web page
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(SPIFFS, "/index.html");
-  });
-  server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", readCO2Sensor().c_str());
-  });
-  server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", readCO2Sensor().c_str());
-  });
-  server.on("/pressure", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", readCO2Sensor().c_str());
-  });
+    // Route for root / web page
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
+        request->send(SPIFFS, "/index.html");
+    });
+    server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest* request) {
+        request->send_P(200, "text/plain", readCO2Sensor().c_str());
+    });
+    server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest* request) {
+        request->send_P(200, "text/plain", readCO2Sensor().c_str());
+    });
+    server.on("/pressure", HTTP_GET, [](AsyncWebServerRequest* request) {
+        request->send_P(200, "text/plain", readCO2Sensor().c_str());
+    });
     // server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     //     request->send(200, "text/plain", "Hello, world");
     // });
-  // Start server
-  server.begin();
+    server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest* request) {
+        request->send(SPIFFS, "/favicon-32x32.png", "image/png");
+    });
+    // Start server
+    server.begin();
 }
 
 int CO2 = 100;
@@ -267,33 +292,12 @@ void loop() {
             snprintf(msg, MSG_BUFFER_SIZE, "%d", CO2);
             Serial.print("MQTT Publish message: co2sensor_01/co2ppm : ");
             Serial.println(msg);
-            MQTTclient.publish("co2sensor_01/co2ppm", msg);
+            if (MQTTclient.connected()) MQTTclient.publish("co2sensor_01/co2ppm", msg); else Serial.println("MQTT NOT connected - cant publish CO2");
 
             // MQTTclient.publish("co2sensor", CO2);
             //
         }
     }
-
-    //!web section
-
-//   // Route for root / web page
-// //   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-// //     request->send(SPIFFS, "/index.html");
-// //   });
-// //   server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request){
-// //     request->send_P(200, "text/plain", readCO2Sensor().c_str());
-// //   });
-// //   server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request){
-// //     request->send_P(200, "text/plain", readCO2Sensor().c_str());
-// //   });
-// //   server.on("/pressure", HTTP_GET, [](AsyncWebServerRequest *request){
-// //     request->send_P(200, "text/plain", readCO2Sensor().c_str());
-// //   });
-//     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-//         request->send(200, "text/plain", "Hello, world");
-//     });
-//   // Start server
-//   server.begin();
 }
 
 // pio run -t uploadfs
