@@ -33,8 +33,10 @@ LedFader heartBeatLED(ESP32_ONBOARD_BLUE_LED_PIN, 1, 0, 255, HEART_BEAT_TIME, tr
 
 unsigned long getDataTimer = 0;
 
-const char* work_ssid = "btf_staff";
+const char* work_ssid = "BTF_Staff";
+// const char* work_ssid = "btf_staff";
 const char* work_password = "Rei1Vnbu!";
+// const char* work_password = "rio2016!";
 
 const char* ssid = "notwork";
 const char* password = "a new router can solve many problems";
@@ -83,7 +85,7 @@ void setup_wifi() {
         delay(500);
         Serial.print("try work wifi.");
         counter++;
-        if (counter == 10) timedOut = true;
+        if (counter == 30) timedOut = true;
     }
 
     if (WiFi.status() != WL_CONNECTED) {
