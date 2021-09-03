@@ -8,8 +8,10 @@
 #include <SPIFFS.h>
 #include <WiFi.h>
 
+#include "DHTesp.h"
 #include "LedFader.h"
 #include "MHZ19.h"
+
 // #define RX_PIN 10                                          // Rx pin which the MHZ19 Tx pin is attached to
 // #define TX_PIN 11                                          // Tx pin which the MHZ19 Rx pin is attached to
 #define MHZ19_BAUDRATE 9600  // Device to MH-Z19 Serial baudrate (should not be changed)
@@ -65,6 +67,9 @@ int value = 0;
 #define MAX_SAFE_LEVEL 800
 #define MAX_MID_LEVEL 1000
 
+#define dhtPin 25
+DHTesp dht22;
+
 void setup_wifi() {
     delay(10);
     // We start by connecting to a WiFi network
@@ -85,7 +90,7 @@ void setup_wifi() {
         delay(500);
         Serial.print("try work wifi.");
         counter++;
-        if (counter == 30) timedOut = true;
+        if (counter == 5) timedOut = true;
     }
 
     if (WiFi.status() != WL_CONNECTED) {
@@ -164,15 +169,17 @@ String readCO2Sensor() {
         Serial.println("Failed to read from CO2 sensor!");
         return String(CO2ppm);
     } else {
-        Serial.print("Sensor reads : ");
-        Serial.println(CO2ppm);
+        // Serial.print("Sensor reads : ");
+        // Serial.println(CO2ppm);
         return String(CO2ppm);
     }
 }
 #define FORMAT_SPIFFS_IF_FAILED true
+
 void setup() {
     delay(2000);
     heartBeatLED.begin();
+    dht22.setup(dhtPin, DHTesp::DHT22);
     Serial.begin(MONITOR_SPEED);  // Device to serial monitor feedback
 
     // Initialize SPIFFS
@@ -224,9 +231,7 @@ void setup() {
 
     delay(2000);
     Serial.print("\n");
-    Serial.println("Starting CO2 monitor Web Server...");
-    // espServer.begin(); /* Start the HTTP web Server */
-    Serial.println("CO2 monitor Web Server Started");
+
     Serial.print("\n");
     Serial.print("The URL of CO2 monitor Web Server is: ");
     Serial.print("http://");
@@ -239,16 +244,19 @@ void setup() {
     server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
         request->send(SPIFFS, "/index.html");
     });
-    server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest* request) {
+    server.on("/co2", HTTP_GET, [](AsyncWebServerRequest* request) {
         request->send_P(200, "text/plain", readCO2Sensor().c_str());
         Serial.println("temperature readCO2Sensor() called from ajax");
     });
+    server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest* request) {
+        float temperature = dht22.getTemperature();
+        request->send(200, "text/plain", String(temperature));
+    });
     server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest* request) {
-        request->send_P(200, "text/plain", readCO2Sensor().c_str());
+        float humidity = dht22.getHumidity();
+        request->send(200, "text/plain", String(humidity));
     });
-    server.on("/pressure", HTTP_GET, [](AsyncWebServerRequest* request) {
-        request->send_P(200, "text/plain", readCO2Sensor().c_str());
-    });
+
     // server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     //     request->send(200, "text/plain", "Hello, world");
     // });
@@ -256,7 +264,9 @@ void setup() {
         request->send(SPIFFS, "/favicon-32x32.png", "image/png");
     });
     // Start server
+    Serial.println("Starting CO2 monitor Web Server...");
     server.begin();
+    Serial.println("CO2 monitor Web Server Started");
 }
 
 int CO2 = 100;
@@ -271,35 +281,39 @@ const long timeoutTime = 2000;
 void loop() {
     heartBeatLED.update();
 
-    if (millis() - getDataTimer >= 10000) {
+    if (millis() - getDataTimer >= 10000) {  //get data every n ms
         /* note: getCO2() default is command "CO2 Unlimited". This returns the correct CO2 reading even 
         if below background CO2 levels or above range (useful to validate sensor). You can use the 
         usual documented command with getCO2(false) */
 
         CO2 = myMHZ19.getCO2();  // Request CO2 (as ppm)
 
+        Serial.println("Reading Sensors:");
         Serial.print("CO2 (ppm): ");
         Serial.println(CO2);
-
-        getDataTimer = millis();
+        Serial.print("Temperature (C): ");
+        Serial.println(dht22.getTemperature());
+        Serial.print("Humidity (C): ");
+        Serial.println(dht22.getHumidity());
 
         if (!MQTTclient.connected()) {
             reconnect();
         }
-        MQTTclient.loop();
 
-        unsigned long now = millis();
-        if (now - lastMsg > 2000) {
-            lastMsg = now;
-            ++value;
-            snprintf(msg, MSG_BUFFER_SIZE, "%d", CO2);
-            Serial.print("MQTT Publish message: co2sensor_01/co2ppm : ");
-            Serial.println(msg);
-            if (MQTTclient.connected()) MQTTclient.publish("co2sensor_01/co2ppm", msg); else Serial.println("MQTT NOT connected - cant publish CO2");
+        snprintf(msg, MSG_BUFFER_SIZE, "%d", CO2);
+        Serial.print("MQTT Publish message: co2sensor_01/co2ppm : ");
+        Serial.println(msg);
 
-            // MQTTclient.publish("co2sensor", CO2);
-            //
-        }
+        if (MQTTclient.connected()) {
+            MQTTclient.loop();
+            MQTTclient.publish("co2sensor_01/co2ppm", msg);
+        } else
+            Serial.println("MQTT NOT connected - cant publish CO2");
+
+        // MQTTclient.publish("co2sensor", CO2);
+        //
+
+        getDataTimer = millis();
     }
 }
 
