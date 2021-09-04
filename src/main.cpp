@@ -296,6 +296,10 @@ void loop() {
         Serial.print("Humidity (C): ");
         Serial.println(dht22.getHumidity());
 
+        if (WiFi.status() != WL_CONNECTED) {
+            Serial.println("WiFi is NOT connected - trying wifi_setu()");
+            setup_wifi();
+        }
         if (!MQTTclient.connected()) {
             reconnect();
         }
