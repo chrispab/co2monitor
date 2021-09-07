@@ -40,8 +40,8 @@ const char* work_ssid = "BTF_Staff";
 const char* work_password = "Rei1Vnbu!";
 // const char* work_password = "rio2016!";
 
-const char* ssid = "notwork";
-const char* password = "a new router can solve many problems";
+const char* home_ssid = "notwork";
+const char* home_password = "a new router can solve many problems";
 
 const char* soft_ap_ssid = "CO2 Monitor";
 const char* soft_ap_password = "password";
@@ -70,39 +70,51 @@ int value = 0;
 #define dhtPin 25
 DHTesp dht22;
 
+boolean try_wifi_connect(const char* ssid, const char* password) {
+    WiFi.begin(ssid, password);
+    //try to connect for 5 secs
+    // boolean timedOut = false;
+    int counter = 0;
+    while ((WiFi.status() != WL_CONNECTED)) {
+        if (counter == 20) {
+            Serial.print("could not connect to :");
+            Serial.println(ssid);
+            return false;
+        }
+        counter++;
+        Serial.print("trying to connect to :");
+        Serial.println(ssid);
+
+        delay(500);  //wait, it might still connect
+    }
+    Serial.print("connected to :");
+    Serial.println(ssid);
+    return true;
+}
+
 void setup_wifi() {
     delay(10);
     // We start by connecting to a WiFi network
-    Serial.println();
-    Serial.print("Connecting to ");
-    Serial.println(ssid);
+    // Serial.println();
+    // Serial.print("Connecting to ");
+    // Serial.println(ssid);
 
     WiFi.mode(WIFI_STA);
+    // or
     // WiFi.mode(WIFI_MODE_APSTA);
     // WiFi.softAP(soft_ap_ssid, soft_ap_password);
 
     //try work wifi first
-    WiFi.begin(work_ssid, work_password);
-    //try to connect for 5 secs
-    boolean timedOut = false;
-    int counter = 0;
-    while ((WiFi.status() != WL_CONNECTED) && !timedOut) {
-        delay(500);
-        Serial.print("try work wifi.");
-        counter++;
-        if (counter == 5) timedOut = true;
+    boolean connected = false;
+    connected = try_wifi_connect(work_ssid, work_password);
+    if (!connected) {
+        connected = try_wifi_connect(home_ssid, home_password);
+    }
+    if (!connected) {
+        return;  // restart device
     }
 
-    if (WiFi.status() != WL_CONNECTED) {
-        WiFi.begin(ssid, password);
-
-        while (WiFi.status() != WL_CONNECTED) {
-            delay(500);
-            Serial.print("try home wifi.");
-        }
-    }
-
-    randomSeed(micros());
+    randomSeed(micros());  //??
 
     Serial.print("ESP32 IP as soft AP: ");
     Serial.println(WiFi.softAPIP());
@@ -111,6 +123,8 @@ void setup_wifi() {
     Serial.println("WiFi connected");
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
+    Serial.print("SSID connected to : ");
+    Serial.println(WiFi.SSID());
 }
 
 // MQTT start
@@ -124,16 +138,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.println();
 
     // Switch on the LED if an 1 was received as first character
-    if ((char)payload[0] == '1') {
-        digitalWrite(BUILTIN_LED, LOW);  // Turn the LED on (Note that LOW is the voltage level
-                                         // but actually the LED is on; this is because
-                                         // it is active low on the ESP-01)
-    } else {
-        digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by making the voltage HIGH
-    }
+    // if ((char)payload[0] == '1') {
+    //     digitalWrite(BUILTIN_LED, LOW);  // Turn the LED on (Note that LOW is the voltage level
+    //                                      // but actually the LED is on; this is because
+    //                                      // it is active low on the ESP-01)
+    // } else {
+    //     digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by making the voltage HIGH
+    // }
 }
 
-void reconnect() {
+void reconnectMQTT() {
     // Loop until we're reconnected or timed out
     // try for 3 secs to connect
     boolean timedOut = false;
@@ -166,7 +180,13 @@ String readCO2Sensor() {
     int CO2ppm = myMHZ19.getCO2();  // Request CO2 (as ppm)
     // float p = bme.readPressure() / 100.0F;
     if (CO2ppm == 0) {
-        Serial.println("Failed to read from CO2 sensor!");
+        Serial.println("!!!!!!     Failed to read from CO2 sensor!");
+        //try restarting the serial i/f to sensor
+        Serial2.begin(9600);
+
+        // myMHZ19.begin(mySerial);  // *Serial(Stream) refence must be passed to library begin().
+        myMHZ19.begin(Serial2);  // *Serial(Stream) refence must be passed to library begin().
+        CO2ppm = myMHZ19.getCO2();
         return String(CO2ppm);
     } else {
         // Serial.print("Sensor reads : ");
@@ -226,9 +246,12 @@ void setup() {
     // pinMode(BUILTIN_LED, OUTPUT);  // Initialize the BUILTIN_LED pin as an output
     // Serial.begin(9600);
     setup_wifi();
-    MQTTclient.setServer(mqtt_server, 1883);
-    MQTTclient.setCallback(callback);
 
+    //ONLY use mqtt if at home
+    if (WiFi.SSID() == home_ssid) {
+        MQTTclient.setServer(mqtt_server, 1883);
+        MQTTclient.setCallback(callback);
+    }
     delay(2000);
     Serial.print("\n");
 
@@ -297,25 +320,23 @@ void loop() {
         Serial.println(dht22.getHumidity());
 
         if (WiFi.status() != WL_CONNECTED) {
-            Serial.println("WiFi is NOT connected - trying wifi_setu()");
+            Serial.println("WiFi is NOT connected - trying wifi_setup()");
             setup_wifi();
         }
-        if (!MQTTclient.connected()) {
-            reconnect();
+        if (WiFi.SSID() == home_ssid) {
+            if (!MQTTclient.connected()) {
+                reconnectMQTT();
+            }
+
+            snprintf(msg, MSG_BUFFER_SIZE, "%d", CO2);
+            Serial.print("MQTT Publish message: co2sensor_01/co2ppm : ");
+            Serial.println(msg);
+            if (MQTTclient.connected()) {
+                MQTTclient.loop();
+                MQTTclient.publish("co2sensor_01/co2ppm", msg);
+            } else
+                Serial.println("MQTT NOT connected - cant publish CO2");
         }
-
-        snprintf(msg, MSG_BUFFER_SIZE, "%d", CO2);
-        Serial.print("MQTT Publish message: co2sensor_01/co2ppm : ");
-        Serial.println(msg);
-
-        if (MQTTclient.connected()) {
-            MQTTclient.loop();
-            MQTTclient.publish("co2sensor_01/co2ppm", msg);
-        } else
-            Serial.println("MQTT NOT connected - cant publish CO2");
-
-        // MQTTclient.publish("co2sensor", CO2);
-        //
 
         getDataTimer = millis();
     }
