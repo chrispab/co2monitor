@@ -1,17 +1,7 @@
 #https://medium.com/swlh/wordpress-deployment-with-nginx-php-fpm-and-mariadb-using-docker-compose-55f59e5c1a
 #https://newbedev.com/setting-up-php-fpm-nginx-mariadb-on-centos-using-docker
 version: '3'
-services:  
-  mysql:    
-    image: mariadb
-    volumes:     
-      - ./web3/mariadb/data/mysql:/var/lib/mysql    
-    environment:      
-      MYSQL_ROOT_PASSWORD: mysql_root_pass      
-      MYSQL_DATABASE: db_name      
-      MYSQL_USER: user_name      
-      MYSQL_PASSWORD: user_pass    
-    restart: always
+services:
 
   nginx:
     image: nginx
@@ -20,10 +10,56 @@ services:
       - ./web3/nginx/html:/usr/share/nginx/html:ro
     ports:
       - 8080:80
+    depends_on:
+      - php
+    links:
+        - php      
 
   # PHP Service
   php:
-    image: php:8.0-fpm
+    # image: php:8.0-fpm
+    build: ./web3/php
     working_dir: /usr/share/nginx/html
     volumes:
-      - ./web3/nginx/html:/usr/share/nginx/html      
+      - ./web3/nginx/html:/usr/share/nginx/html
+    ports:
+        - '9000:9000'      
+
+
+
+  mysql:    
+    image: mariadb
+    ports:
+      - '3306:3306'
+    volumes:     
+      # - ./web3/mariadb/data/mysql:/var/lib/mysql
+      - mysqldata:/var/lib/mysql
+    user: mysql    
+    environment:      
+      MYSQL_ROOT_PASSWORD: root      
+      MYSQL_DATABASE: demo  
+      # user: mysql    
+      # MYSQL_USER: user_name      
+      # MYSQL_PASSWORD: user_pass    
+    restart: always
+    # healthcheck:
+    #   test: mysqladmin ping -h 127.0.0.1 -u root --password=$$MYSQL_ROOT_PASSWORD
+    #   interval: 5s
+    #   retries: 10
+
+  phpmyadmin:
+    image: 'phpmyadmin/phpmyadmin'
+    restart: always
+    ports:
+       - '8081:80'
+    links:
+        - mysql:mysql
+    environment:
+        MYSQL_USERNAME: root
+        MYSQL_ROOT_PASSWORD: root
+        PMA_HOST: mysql
+
+# Volumes
+volumes:
+
+  mysqldata:
