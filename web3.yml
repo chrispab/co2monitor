@@ -1,0 +1,14 @@
+#https://medium.com/swlh/wordpress-deployment-with-nginx-php-fpm-and-mariadb-using-docker-compose-55f59e5c1a
+#https://newbedev.com/setting-up-php-fpm-nginx-mariadb-on-centos-using-docker
+version: '3'
+services:  
+  mysql:    
+    image: mariadb
+    volumes:     
+      - ./web3/data/mysql:/var/lib/mysql    
+    environment:      
+      MYSQL_ROOT_PASSWORD: mysql_root_pass      
+      MYSQL_DATABASE: db_name      
+      MYSQL_USER: user_name      
+      MYSQL_PASSWORD: user_pass    
+    restart: always
