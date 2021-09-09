@@ -30,7 +30,7 @@ services:
   mysql:    
     image: mariadb
     ports:
-      - '3306:3306'
+      - '4306:3306'
     volumes:     
       # - ./web3/mariadb/data/mysql:/var/lib/mysql
       - mysqldata:/var/lib/mysql
