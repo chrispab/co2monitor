@@ -168,7 +168,7 @@
 <script>
   var chartT = new Highcharts.Chart({
     chart: { renderTo: "chart-co2", type: 'spline' },
-    title: { text: "CO<sub>2</sub> Level - ppm" },
+    title: { text: "CO2 Level - ppm" },
     series: [
       {
         showInLegend: false,
@@ -220,7 +220,7 @@
         var x = new Date().getTime(),
           y = parseInt(this.responseText);
         console.log(this.responseText);
-        if (chartT.series[0].data.length > 1440) {
+        if (chartT.series[0].data.length > 2160) {
           chartT.series[0].addPoint([x, y], true, true, true);
         } else {
           chartT.series[0].addPoint([x, y], true, false, true);
@@ -248,6 +248,7 @@
     };
     xhttp.open("GET", "/co2", true);
     xhttp.send();
+    // every 15 secs
   }, 15000);
 
   //! fetch temperature periodically
@@ -266,7 +267,7 @@
     };
     xhttp.open("GET", "/temperature", true);
     xhttp.send();
-  }, 15000);
+  }, 30000); // 30 secs
 
   //! fetch humidity_level periodically
   setInterval(function () {
@@ -283,7 +284,7 @@
     };
     xhttp.open("GET", "/humidity", true);
     xhttp.send();
-  }, 15000);
+  }, 30000); // 30 secs
 
 
   //! fetch time periodically
