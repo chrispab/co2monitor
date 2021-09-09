@@ -11,14 +11,14 @@
 -->
 <?php
 
-$servername = "localhost";
-
+// $servername = "127.0.0.1";
+$servername = "mysql";
 // REPLACE with your Database name
-$dbname = "REPLACE_WITH_YOUR_DATABASE_NAME";
+$dbname = "co2_monitor";
 // REPLACE with Database user
-$username = "REPLACE_WITH_YOUR_USERNAME";
+$username = "co2sensor";
 // REPLACE with Database user password
-$password = "REPLACE_WITH_YOUR_PASSWORD";
+$password = "co2sensorpassword";
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -27,7 +27,7 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 } 
 
-$sql = "SELECT id, value1, value2, value3, reading_time FROM Sensor order by reading_time desc limit 40";
+$sql = "SELECT id, co2, temp, humidity, sample_time FROM readings order by sample_time desc";
 
 $result = $conn->query($sql);
 
@@ -35,7 +35,7 @@ while ($data = $result->fetch_assoc()){
     $sensor_data[] = $data;
 }
 
-$readings_time = array_column($sensor_data, 'reading_time');
+$readings_time = array_column($sensor_data, 'sample_time');
 
 // ******* Uncomment to convert readings time array to your timezone ********
 /*$i = 0;
@@ -47,9 +47,9 @@ foreach ($readings_time as $reading){
     $i += 1;
 }*/
 
-$value1 = json_encode(array_reverse(array_column($sensor_data, 'value1')), JSON_NUMERIC_CHECK);
-$value2 = json_encode(array_reverse(array_column($sensor_data, 'value2')), JSON_NUMERIC_CHECK);
-$value3 = json_encode(array_reverse(array_column($sensor_data, 'value3')), JSON_NUMERIC_CHECK);
+$value1 = json_encode(array_reverse(array_column($sensor_data, 'co2')), JSON_NUMERIC_CHECK);
+$value2 = json_encode(array_reverse(array_column($sensor_data, 'temp')), JSON_NUMERIC_CHECK);
+$value3 = json_encode(array_reverse(array_column($sensor_data, 'humidity')), JSON_NUMERIC_CHECK);
 $reading_time = json_encode(array_reverse($readings_time), JSON_NUMERIC_CHECK);
 
 /*echo $value1;
@@ -79,11 +79,15 @@ $conn->close();
     }
   </style>
   <body>
-    <h2>ESP Weather Station</h2>
+    <h2>CO2 SENSOR</h2>
+    <div id="chart-pressure" class="container"></div>
+
     <div id="chart-temperature" class="container"></div>
     <div id="chart-humidity" class="container"></div>
-    <div id="chart-pressure" class="container"></div>
+    <!-- <?php echo $value1; ?>; -->
+
 <script>
+
 
 var value1 = <?php echo $value1; ?>;
 var value2 = <?php echo $value2; ?>;
@@ -92,10 +96,10 @@ var reading_time = <?php echo $reading_time; ?>;
 
 var chartT = new Highcharts.Chart({
   chart:{ renderTo : 'chart-temperature' },
-  title: { text: 'BME280 Temperature' },
+  title: { text: 'Temperature' },
   series: [{
     showInLegend: false,
-    data: value1
+    data: value2
   }],
   plotOptions: {
     line: { animation: false,
@@ -116,10 +120,10 @@ var chartT = new Highcharts.Chart({
 
 var chartH = new Highcharts.Chart({
   chart:{ renderTo:'chart-humidity' },
-  title: { text: 'BME280 Humidity' },
+  title: { text: 'Humidity' },
   series: [{
     showInLegend: false,
-    data: value2
+    data: value3
   }],
   plotOptions: {
     line: { animation: false,
@@ -140,10 +144,10 @@ var chartH = new Highcharts.Chart({
 
 var chartP = new Highcharts.Chart({
   chart:{ renderTo:'chart-pressure' },
-  title: { text: 'BME280 Pressure' },
+  title: { text: 'CO2' },
   series: [{
     showInLegend: false,
-    data: value3
+    data: value1
   }],
   plotOptions: {
     line: { animation: false,

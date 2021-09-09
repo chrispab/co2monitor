@@ -4,6 +4,7 @@
 
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <HTTPClient.h>
 #include <PubSubClient.h>
 #include <SPIFFS.h>
 #include <WiFi.h>
@@ -11,7 +12,6 @@
 #include "DHTesp.h"
 #include "LedFader.h"
 #include "MHZ19.h"
-
 // #define RX_PIN 10                                          // Rx pin which the MHZ19 Tx pin is attached to
 // #define TX_PIN 11                                          // Tx pin which the MHZ19 Rx pin is attached to
 #define MHZ19_BAUDRATE 9600  // Device to MH-Z19 Serial baudrate (should not be changed)
@@ -69,6 +69,14 @@ int value = 0;
 
 #define dhtPin 25
 DHTesp dht22;
+
+// REPLACE with your Domain name and URL path or IP address with path
+// const char* serverName = "http://example.com/post-data.php";
+const char* serverName = "http://192.168.0.50:8080/post-data.php";
+
+// Keep this API Key value to be compatible with the PHP code provided in the project page.
+// If you change the apiKeyValue value, the PHP file /post-data.php also needs to have the same key
+String apiKeyValue = "tPmAT5Ab3j7F9";
 
 boolean try_wifi_connect(const char* ssid, const char* password) {
     WiFi.begin(ssid, password);
@@ -292,6 +300,52 @@ void setup() {
     Serial.println("CO2 monitor Web Server Started");
 }
 
+void postDataToRemoteDB(int CO2, float Temperature, float Humidity) {
+    //Check WiFi connection status
+    if (WiFi.status() == WL_CONNECTED) {
+        WiFiClient client;
+        HTTPClient http;
+
+        // Your Domain name with URL path or IP address with path
+        http.begin(client, serverName);
+
+        // Specify content-type header
+        http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+        // Prepare your HTTP POST request data
+        String httpRequestData = "api_key=" + apiKeyValue + "&value1=" + String(CO2) + "&value2=" + String(Temperature) + "&value3=" + String(Humidity) + "";
+        Serial.print("httpRequestData: ");
+        Serial.println(httpRequestData);
+
+        // You can comment the httpRequestData variable above
+        // then, use the httpRequestData variable below (for testing purposes without the BME280 sensor)
+        //String httpRequestData = "api_key=tPmAT5Ab3j7F9&value1=24.75&value2=49.54&value3=1005.14";
+
+        // Send HTTP POST request
+        int httpResponseCode = http.POST(httpRequestData);
+
+        // If you need an HTTP request with a content type: text/plain
+        //http.addHeader("Content-Type", "text/plain");
+        //int httpResponseCode = http.POST("Hello, World!");
+
+        // If you need an HTTP request with a content type: application/json, use the following:
+        //http.addHeader("Content-Type", "application/json");
+        //int httpResponseCode = http.POST("{\"value1\":\"19\",\"value2\":\"67\",\"value3\":\"78\"}");
+
+        if (httpResponseCode > 0) {
+            Serial.print("HTTP Response code: ");
+            Serial.println(httpResponseCode);
+        } else {
+            Serial.print("Error code: ");
+            Serial.println(httpResponseCode);
+        }
+        // Free resources
+        http.end();
+    } else {
+        Serial.println("WiFi Disconnected");
+    }
+}
+
 int CO2 = 100;
 
 // Current time
@@ -304,7 +358,7 @@ const long timeoutTime = 2000;
 void loop() {
     heartBeatLED.update();
 
-    if (millis() - getDataTimer >= 10000) {  //get data every n ms
+    if (millis() - getDataTimer >= 15000) {  //get data every n ms
         /* note: getCO2() default is command "CO2 Unlimited". This returns the correct CO2 reading even 
         if below background CO2 levels or above range (useful to validate sensor). You can use the 
         usual documented command with getCO2(false) */
@@ -337,6 +391,8 @@ void loop() {
             } else
                 Serial.println("MQTT NOT connected - cant publish CO2");
         }
+        //send the data to the remote db to store
+        postDataToRemoteDB(CO2, dht22.getTemperature(), dht22.getHumidity());
 
         getDataTimer = millis();
     }

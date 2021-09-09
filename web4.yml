@@ -30,14 +30,15 @@ services:
   mysql:    
     image: mariadb
     ports:
-      - '4306:3306'
+      - '3306:3306'
     volumes:     
       # - ./web3/mariadb/data/mysql:/var/lib/mysql
       - mysqldata:/var/lib/mysql
     user: mysql    
     environment:      
-      MYSQL_ROOT_PASSWORD: root      
-      MYSQL_DATABASE: demo  
+      MYSQL_ROOT_PASSWORD: root
+      TZ: "Europe/London"      
+      # MYSQL_DATABASE: demo  
       # user: mysql    
       # MYSQL_USER: user_name      
       # MYSQL_PASSWORD: user_pass    

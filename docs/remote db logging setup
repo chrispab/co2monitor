@@ -5,19 +5,29 @@ https://randomnerdtutorials.com/visualize-esp32-esp8266-sensor-readings-from-any
 
 once docker webserver setup on a remote system:
 
+phpmyadmin:
+http://localhost:8081
+root, root
+
+
 CREATE DATABASE co2_monitor;
 
-create a user for remote access to enter data in the database.
-user co2sensor
-password co2sensorpassword
+-- create a user for remote access to enter data in the database.
+-- user co2sensor
+-- password co2sensorpassword
 
-CREATE TABLE co2_readings (
+
+CREATE DATABASE co2_monitor;
+
+USE co2_monitor;
+
+CREATE TABLE readings (
     id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     co2 VARCHAR(10),
     temp VARCHAR(10),
     humidity VARCHAR(10),
     sample_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-)
+);
 
 
 
