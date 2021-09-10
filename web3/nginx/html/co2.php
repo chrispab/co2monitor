@@ -35,11 +35,19 @@ foreach ($readings_time as $reading){
     //$readings_time[$i] = date("Y-m-d H:i:s", strtotime("$reading + 4 hours"));
     $i += 1;
 }*/
+// const co2series = [];
+// $sensor_data.    .forEach ($sensor_data[]){
+//   $co2series;
+
+// };
+
 
 $co2Values = json_encode(array_reverse(array_column($sensor_data, 'co2')), JSON_NUMERIC_CHECK);
 $value2 = json_encode(array_reverse(array_column($sensor_data, 'temp')), JSON_NUMERIC_CHECK);
 $value3 = json_encode(array_reverse(array_column($sensor_data, 'humidity')), JSON_NUMERIC_CHECK);
 $reading_time = json_encode(array_reverse($readings_time), JSON_NUMERIC_CHECK);
+
+
 
 /*echo $value1;
 echo $value2;
@@ -57,6 +65,43 @@ echo $reading_time;*/
 // x,y
 
 // g https://jsfiddle.net/BlackLabel/5wsL6euf/
+
+// conmverrt $this->Array ( [0] => Array ( [id] => 707 [co2] => 713 [temp] => 23.00 [humidity] => 92.30 [sample_time] => 2021-09-09 23:58:55 ) [1] => Array ( [id] => 706 [co2] => 715 [temp] => 23.00 [humidity] => 92.20 [sample_time] => 2021-09-09 23:58:40 ) [2] => Array ( [id] => 705 [co2] => 716 [temp] => 23.10 [humidity] => 91.90 [sample_time] => 2021-09-09 23:58:25 ) [3] => Array ( [id] => 704 [co2] => 720 [temp] => 23.00 [humidity] => 92.40 [sample_time] => 2021-09-09 23:58:10 ) [4] => Array ( [id] => 703 [co2] => 725 [temp] => 23.10 [humidity] => 92.20 [sample_time] => 2021-09-09 23:57:55 ) [5] => Array ( [id] => 702 [co2] => 729 [temp] => 23.10 [humidity] => 92.40 [sample_time] => 2021-09-09 23:57:40 ) [6] => Array ( [id] => 701 [co2] => 733 [temp] => 23.10 [humidity] => 92.00 [sample_time] => 2021-09-09 23:57:25 ) [
+  // to $this->;;
+//   Array
+// (
+//     [0] => Array
+//         (
+//             [id] => 778
+//             [co2] => 734
+//             [temp] => 23.00
+//             [humidity] => 92.70
+//             [sample_time] => 2021-09-10 00:16:48
+//         )
+
+//     [1] => Array
+//         (
+//             [id] => 777
+//             [co2] => 734
+//             [temp] => 23.00
+//             [humidity] => 92.90
+//             [sample_time] => 2021-09-10 00:16:33
+//         )
+
+  // https://jsfiddle.net/gh/get/library/pure/highcharts/highcharts/tree/master/samples/highcharts/series/data-array-of-arrays-datetime/
+//   Highcharts.chart('container', {
+//     xAxis: {
+//         type: 'datetime'
+//     },
+
+//     series: [{
+//         data: [
+//             [Date.UTC(2010, 0, 1), 29.9],
+//             [Date.UTC(2010, 2, 1), 71.5],
+//             [Date.UTC(2010, 3, 1), 106.4]
+//         ]
+//     }]
+// });
 
 $result->free();
 $conn->close();
@@ -227,6 +272,9 @@ $conn->close();
     </div>
 
   </div>
+  <!-- <?php echo var_dump($sensor_data); ?>; -->
+  <?php echo '<pre>'; ?>;
+  <?php echo print_r($sensor_data); ?>;
   <?php echo $co2Values; ?>;<?php echo $reading_time; ?>;
 </body>
 <script>
