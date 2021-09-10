@@ -69,8 +69,8 @@ services:
   nginx:
     image: nginx
     volumes:
-      - ./volumes/nginx/config/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./volumes/nginx/html:/usr/share/nginx/html:ro
+      - ./volumes/co2monitor/nginx/config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./volumes/co2monitor/nginx/html:/usr/share/nginx/html:ro
       #ensure file structure and files are created/added before upping these containers
     ports:
       - 8080:80
@@ -82,12 +82,12 @@ services:
   # PHP Service
   php:
     image: php:8.0-fpm
-    build: ./volumes/php/build # ensure Dockerfile for php build is in this dir
+    build: ./volumes/co2monitor/php/build # ensure Dockerfile for php build is in this dir
     working_dir: /usr/share/nginx/html #php internal container working dir - same as html folder 
     volumes:
-      - ./volumes/nginx/html:/usr/share/nginx/html
-      - ./volumes/php/logs/php-error.log:/var/log/error.log
-      - ./volumes/php/settings/phpSettings.conf:/usr/local/etc/php-fpm.d/zzz-phpSettings.conf
+      - ./volumes/co2monitor/nginx/html:/usr/share/nginx/html
+      - ./volumes/co2monitor/php/logs/php-error.log:/var/log/error.log
+      - ./volumes/co2monitor/php/settings/phpSettings.conf:/usr/local/etc/php-fpm.d/zzz-phpSettings.conf
     ports:
         - '9000:9000'      
 
@@ -124,7 +124,7 @@ services:
         MYSQL_USERNAME: root
         MYSQL_ROOT_PASSWORD: root
         PMA_HOST: mysql
-        PMA_ARBITRARY: 1
+        # PMA_ARBITRARY: 1
 
 # Volumes
 volumes:
