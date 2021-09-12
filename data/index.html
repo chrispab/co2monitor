@@ -125,7 +125,7 @@
 <body>
 
   <div class="header">
-    <h1>CO<sub>2</sub> Monitor</h1>
+    <h1>CO<sub>2</sub> Monitor <h4>(Sensor direct)</h4></h1>
   </div>
 
   <div class="row">
@@ -219,6 +219,8 @@
       if (this.readyState == 4 && this.status == 200) {
         var x = new Date().getTime(),
           y = parseInt(this.responseText);
+          console.log(x); // log date as used in graph
+
         console.log(this.responseText);
         if (chartT.series[0].data.length > 2160) {
           chartT.series[0].addPoint([x, y], true, true, true);
