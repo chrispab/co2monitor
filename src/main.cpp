@@ -187,7 +187,7 @@ void reconnectMQTT() {
 String readCO2Sensor() {
     int CO2ppm = myMHZ19.getCO2();  // Request CO2 (as ppm)
     // float p = bme.readPressure() / 100.0F;
-    if (CO2ppm == 0) {
+    if (CO2ppm == 0) {//! dont send back 0 - use prev or get till a number
         Serial.println("!!!!!!     Failed to read from CO2 sensor!");
         //try restarting the serial i/f to sensor
         Serial2.begin(9600);
