@@ -12,7 +12,7 @@
 <?php
 
 // $servername = "127.0.0.1";
-$servername = "mysql";
+$servername = "mysql:3307";
 // REPLACE with your Database name
 $dbname = "co2_monitor";
 // REPLACE with Database user

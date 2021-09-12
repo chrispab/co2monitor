@@ -1,0 +1,88 @@
+#https://medium.com/swlh/wordpress-deployment-with-nginx-php-fpm-and-mariadb-using-docker-compose-55f59e5c1a
+#https://newbedev.com/setting-up-php-fpm-nginx-mariadb-on-centos-using-docker
+
+#setup for use in dev.local iotstack
+version: '3'
+services:
+
+  # nginx:
+  #   image: nginx
+  #   volumes:
+  #     - ./web3/nginx/config/nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./web3/nginx/html:/usr/share/nginx/html:ro
+  #   ports:
+  #     - 8080:80
+  #   depends_on:
+  #     - php
+  #   links:
+  #       - php      
+  nginx:
+    image: nginx
+    volumes:
+      - ./volumes/nginx/config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./volumes/nginx/html:/usr/share/nginx/html:ro
+      #ensure file structure and files are created/added before upping these containers
+    ports:
+      - 8080:80
+    depends_on:
+      - php
+    links:
+        - php
+
+
+  # # PHP Service
+  # php:
+  #   # image: php:8.0-fpm
+  #   build: ./web3/php
+  #   working_dir: /usr/share/nginx/html
+  #   volumes:
+  #     - ./web3/nginx/html:/usr/share/nginx/html
+  #   ports:
+  #       - '9000:9000'      
+
+  # PHP Service
+  php:
+    image: php:8.0-fpm
+    build: ./volumes/php/build # ensure Dockerfile for php build is in this dir
+    working_dir: /usr/share/nginx/html #php internal container working dir - same as html folder 
+    volumes:
+      - ./volumes/nginx/html:/usr/share/nginx/html
+    ports:
+        - '9000:9000'      
+
+
+#mariadb/mysql
+  mysql:
+    image: mariadb
+    ports:
+      - '3306:3306'
+    volumes:     
+      # - ./web3/mariadb/data/mysql:/var/lib/mysql
+      - mysqldata:/var/lib/mysql # uses a docker container volume cos of perms issue - investigate using bind folder to host filesystem
+    user: mysql    
+    environment:      
+      MYSQL_ROOT_PASSWORD: root
+      TZ: "Europe/London"      
+      # MYSQL_DATABASE: demo  
+      # user: mysql    
+      # MYSQL_USER: user_name      
+      # MYSQL_PASSWORD: user_pass    
+    restart: always
+
+
+  phpmyadmin:
+    image: 'phpmyadmin/phpmyadmin'
+    restart: always
+    ports:
+       - '8081:80'
+    links:
+        - mysql:mysql
+    environment:
+        MYSQL_USERNAME: root
+        MYSQL_ROOT_PASSWORD: root
+        PMA_HOST: mysql
+
+# Volumes
+volumes:
+
+  mysqldata:
