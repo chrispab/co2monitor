@@ -340,6 +340,7 @@ void postDataToRemoteDB(int CO2, float Temperature, float Humidity)
         // Specify content-type header
         http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
+//! trim t, h to 1dp!!
         // Prepare your HTTP POST request data
         String httpRequestData = "api_key=" + apiKeyValue + "&value1=" + String(CO2) + "&value2=" + String(Temperature) + "&value3=" + String(Humidity) + "";
 
