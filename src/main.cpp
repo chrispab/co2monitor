@@ -75,7 +75,8 @@ DHTesp dht22;
 // const char* serverName = "http://192.168.0.50:8080/post-data.php"; // dell pc
 const char *remoteServerIP = "192.168.0.199";
 
-const char *serverName = "http://192.168.0.199:8080/post-data.php"; // work hp @ home wifi
+// const char *serverName = "http://192.168.0.199:8080/post-data.php"; // work hp @ home wifi
+const char *serverName = "http://dotty.dynu.com:8080/post-data.php"; // work hp @ home wifi
 
 // Keep this API Key value to be compatible with the PHP code provided in the project page.
 // If you change the apiKeyValue value, the PHP file /post-data.php also needs to have the same key
