@@ -345,7 +345,7 @@ void postDataToRemoteDB(int CO2, float Temperature, float Humidity)
         // Prepare your HTTP POST request data
         // String httpRequestData = "api_key=" + apiKeyValue + "&value1=" + String(CO2) + "&value2=" + String(Temperature) + "&value3=" + String(Humidity) + "";
         String httpRequestData = "api_key=" + apiKeyValue + "&value1=" + String(CO2) + "&value2=" + String(Temperature,1) + "&value3=" + String(Humidity,1);
-        Serial.println(String(Temperature, 1));
+        // Serial.println(String(Temperature, 1));
 
         Serial.print("remote server");
         Serial.println(serverName);
