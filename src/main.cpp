@@ -206,7 +206,8 @@ String readCO2Sensor()
 {
     int CO2ppm = myMHZ19.getCO2(); // Request CO2 (as ppm)
     // float p = bme.readPressure() / 100.0F;
-    if (CO2ppm == 0) {//! dont send back 0 - use prev or get till a number
+    if (CO2ppm == 0)
+    { //! dont send back 0 - use prev or get till a number
         Serial.println("!!!!!!     Failed to read from CO2 sensor!");
         //try restarting the serial i/f to sensor
         Serial2.begin(9600);
@@ -340,9 +341,11 @@ void postDataToRemoteDB(int CO2, float Temperature, float Humidity)
         // Specify content-type header
         http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-//! trim t, h to 1dp!!
+        //! trim t, h to 1dp!!
         // Prepare your HTTP POST request data
-        String httpRequestData = "api_key=" + apiKeyValue + "&value1=" + String(CO2) + "&value2=" + String(Temperature) + "&value3=" + String(Humidity) + "";
+        // String httpRequestData = "api_key=" + apiKeyValue + "&value1=" + String(CO2) + "&value2=" + String(Temperature) + "&value3=" + String(Humidity) + "";
+        String httpRequestData = "api_key=" + apiKeyValue + "&value1=" + String(CO2) + "&value2=" + String(Temperature,1) + "&value3=" + String(Humidity,1);
+        Serial.println(String(Temperature, 1));
 
         Serial.print("remote server");
         Serial.println(serverName);
