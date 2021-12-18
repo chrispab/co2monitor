@@ -29,9 +29,22 @@
 MHZ19 myMHZ19;  // Constructor for library
 // SoftwareSerial mySerial;  // (Uno example) create device to MH-Z19 serial
 
+//! LEDs
 #define ESP32_ONBOARD_BLUE_LED_PIN GPIO_NUM_2  // RHS_P_4 esp32 devkit on board blue LED
 #define HEART_BEAT_TIME 500
-LedFader heartBeatLED(ESP32_ONBOARD_BLUE_LED_PIN, 1, 0, 255, HEART_BEAT_TIME, true);
+LedFader heartBeatLED(ESP32_ONBOARD_BLUE_LED_PIN, 0, 0, 255, HEART_BEAT_TIME, true);
+
+#define RED_LED_PIN GPIO_NUM_13  // LHS_P_3 esp32 devkit
+#define HEART_BEAT_TIME 500
+LedFader highLevelLED(RED_LED_PIN, 1, 0, 255, HEART_BEAT_TIME, true);
+
+#define GREEN_LED_PIN GPIO_NUM_12  // LHS_P_4 esp32 devkit
+#define HEART_BEAT_TIME 500
+LedFader lowLevelLED(GREEN_LED_PIN, 2, 0, 255, HEART_BEAT_TIME, true);
+
+#define YELLOW_LED_PIN GPIO_NUM_14  // LHS_P_5 esp32 devkit
+#define HEART_BEAT_TIME 500
+LedFader mediumLevelLED(YELLOW_LED_PIN, 3, 0, 255, HEART_BEAT_TIME, true);
 
 unsigned long getDataTimer = 0;
 
@@ -222,6 +235,9 @@ String readCO2Sensor() {
 void setup() {
     delay(2000);
     heartBeatLED.begin();
+    lowLevelLED.begin();
+    mediumLevelLED.begin();
+    highLevelLED.begin();
     dht22.setup(dhtPin, DHTesp::DHT22);
     Serial.begin(MONITOR_SPEED);  // Device to serial monitor feedback
 
@@ -359,6 +375,50 @@ void postDataToRemoteDB(int CO2, float Temperature, float Humidity) {
     }
 }
 
+void updateLEDDisplay(int co2) {
+    int highLevel = 800;
+    int mediumLevel = 700;
+    // int lowLevel = 400;
+
+    //calc val for beat period
+    // int period =
+    //in 400 to 1000, slow fast
+    // 1200 - in
+    unsigned long msPerCycle = 1500 - (unsigned long)co2;
+    // lowLevelLED.setMsPerCycle(msPerCycle);
+    // mediumLevelLED.setMsPerCycle(msPerCycle);
+    // highLevelLED.setMsPerCycle(msPerCycle);
+    Serial.print("msPerCycle: ");
+    Serial.println(msPerCycle);
+
+    if (co2 >= highLevel) {
+        lowLevelLED.fullOff();
+        mediumLevelLED.fullOff();
+        highLevelLED.on();
+        highLevelLED.setMsPerCycle(msPerCycle);
+
+        Serial.print("highLevel: ");
+        Serial.println(co2);
+    } else if (co2 >= mediumLevel) {
+        lowLevelLED.fullOff();
+        mediumLevelLED.on();
+        highLevelLED.fullOff();
+        mediumLevelLED.setMsPerCycle(msPerCycle);
+
+        Serial.print("mediumLevel: ");
+        Serial.println(co2);
+    } else {
+        lowLevelLED.on();
+        mediumLevelLED.fullOff();
+        highLevelLED.fullOff();
+        lowLevelLED.setMsPerCycle(msPerCycle);
+
+        Serial.print("lowLevel: ");
+        Serial.println(co2);
+    }
+
+}
+
 int CO2 = 100;
 
 // Current time
@@ -370,13 +430,17 @@ const long timeoutTime = 2000;
 
 void loop() {
     heartBeatLED.update();
+    lowLevelLED.update();
+    mediumLevelLED.update();
+    highLevelLED.update();
 
     if (millis() - getDataTimer >= 15000) {  //get data every n ms
         /* note: getCO2() default is command "CO2 Unlimited". This returns the correct CO2 reading even 
         if below background CO2 levels or above range (useful to validate sensor). You can use the 
         usual documented command with getCO2(false) */
 
-        CO2 = readCO2Sensor().toInt();;  // Request CO2 (as ppm)
+        CO2 = readCO2Sensor().toInt();
+          // Request CO2 (as ppm)
 
         Serial.println("Reading Sensors:");
         Serial.print("CO2 (ppm): ");
@@ -385,6 +449,8 @@ void loop() {
         Serial.println(dht22.getTemperature());
         Serial.print("Humidity (C): ");
         Serial.println(dht22.getHumidity());
+
+        updateLEDDisplay(CO2);
 
         if (WiFi.status() != WL_CONNECTED) {
             Serial.println("WiFi is NOT connected - trying wifi_setup()");

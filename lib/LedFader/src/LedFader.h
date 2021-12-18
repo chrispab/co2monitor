@@ -20,6 +20,7 @@ public:
   void off();
   void fullOn();
   void fullOff();
+  void setMsPerCycle(unsigned long msPerCycle);
 
   bool isOn() const;
 
@@ -28,7 +29,7 @@ private:
   const byte pwmChannel_;
   const byte minValue_;
   const byte maxValue_;
-  const unsigned long msPerCycle_;
+  unsigned long msPerCycle_;
 
   bool active_;
   bool stopWhenOn_;

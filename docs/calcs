@@ -1,0 +1,6 @@
+led 20ma @ 3v op on pin
+1.2v led v drop = 1.8v drive v
+
+so r=3/20ma
+
+r = 150 ohms
