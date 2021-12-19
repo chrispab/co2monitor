@@ -74,24 +74,24 @@ void LedFader::begin() {
     // ledcSetup(uint8_t channel, uint32_t freq, uint8_t resolution_bits);
     ledcSetup(pwmChannel_, 12000, 8);  // 12 kHz PWM, 8-bit resolution
     ledcWrite(pwmChannel_, 255);       // test high output of all leds in sequence
-    delay(1000);
+    delay(300);
     ledcWrite(pwmChannel_, 0);
 
     startTime_ = millis();
 }  // end of LedFader::begin
 
-// set pin to output, get current time
+
 void LedFader::fullOn() {
-    ledcWrite(pwmChannel_, 255);  // test high output of all leds in sequence
+    ledcWrite(pwmChannel_, 255);  // full led illumination
 }  // end of LedFader::begin
 
 void LedFader::fullOff() {
-    ledcWrite(pwmChannel_, 0);  // test high output of all leds in sequence
+    ledcWrite(pwmChannel_, 0);  // 0 led illumination
     active_ = false;
 
 }  // end of LedFader::begin
 
-// call from loop to flash the LED
+// call from loop to set the LED brightness
 void LedFader::update() {
     // do nothing if not active
     if (!active_)
@@ -133,7 +133,7 @@ void LedFader::update() {
 void LedFader::on() {
     active_ = true;
     startTime_ = millis();
-    forwards_ = true;
+    // forwards_ = true;
 }  // end of LedFader::on
 
 // deactivate this LED

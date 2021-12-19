@@ -95,6 +95,47 @@ const char *serverName = "http://dotty.dynu.com:8080/post-data.php";  // work hp
 // If you change the apiKeyValue value, the PHP file /post-data.php also needs to have the same key
 String apiKeyValue = "tPmAT5Ab3j7F9";
 
+#include <Adafruit_GFX.h>
+#include <Adafruit_I2CDevice.h>
+#include <Adafruit_SSD1306.h>
+#include <SPI.h>
+#include <Wire.h>
+
+#define SCREEN_WIDTH 128  // OLED display width, in pixels
+#define SCREEN_HEIGHT 32  // OLED display height, in pixels
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+#define OLED_RESET -1        // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3C  ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+#include <Fonts/FreeMonoBold12pt7b.h>
+
+#include <Fonts/FreeSansBold12pt7b.h>
+#include <Fonts/FreeSansBold18pt7b.h>
+
+#define NUMFLAKES 10  // Number of snowflakes in the animation example
+
+#define LOGO_HEIGHT 16
+#define LOGO_WIDTH 16
+static const unsigned char PROGMEM logo_bmp[] =
+    {0b00000000, 0b11000000,
+     0b00000001, 0b11000000,
+     0b00000001, 0b11000000,
+     0b00000011, 0b11100000,
+     0b11110011, 0b11100000,
+     0b11111110, 0b11111000,
+     0b01111110, 0b11111111,
+     0b00110011, 0b10011111,
+     0b00011111, 0b11111100,
+     0b00001101, 0b01110000,
+     0b00011011, 0b10100000,
+     0b00111111, 0b11100000,
+     0b00111111, 0b11110000,
+     0b01111100, 0b11110000,
+     0b01110000, 0b01110000,
+     0b00000000, 0b00110000};
+
 boolean try_wifi_connect(const char *ssid, const char *password) {
     WiFi.begin(ssid, password);
     //try to connect for 5 secs
@@ -320,6 +361,28 @@ void setup() {
     Serial.println("Starting CO2 monitor Web Server...");
     server.begin();
     Serial.println("CO2 monitor Web Server Started");
+
+    // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+    if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+        Serial.println(F("SSD1306 allocation failed"));
+        for (;;)
+            ;  // Don't proceed, loop forever
+    }
+
+    // Show initial display buffer contents on the screen --
+    // the library initializes this with an Adafruit splash screen.
+    display.display();
+    delay(1000);  // Pause for 2 seconds
+
+    // Clear the buffer
+    display.clearDisplay();
+
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 0);
+    // Display static text
+    display.println("Hello, world!");
+    display.display();
 }
 
 void postDataToRemoteDB(int CO2, float Temperature, float Humidity) {
@@ -384,7 +447,7 @@ void updateLEDDisplay(int co2) {
     // int period =
     //in 400 to 1000, slow fast
     // 1200 - in
-    unsigned long msPerCycle = 1500 - (unsigned long)co2;
+    unsigned long msPerCycle = (2000 - (unsigned long)co2) / 3;
     // lowLevelLED.setMsPerCycle(msPerCycle);
     // mediumLevelLED.setMsPerCycle(msPerCycle);
     // highLevelLED.setMsPerCycle(msPerCycle);
@@ -417,6 +480,23 @@ void updateLEDDisplay(int co2) {
         Serial.println(co2);
     }
 
+    char string[20];
+    itoa(co2, string, 10);
+    // display.setFont(&FreeMonoBold12pt7b);
+    display.setFont(&FreeSansBold12pt7b);
+    // display.setFont(&FreeSansBold18pt7b);
+
+    // Clear the buffer
+    display.clearDisplay();
+
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 25);
+    // Display static text
+    display.print(string);
+    // display.print(");
+    display.println(" ppm");
+    display.display();
 }
 
 int CO2 = 100;
@@ -440,7 +520,7 @@ void loop() {
         usual documented command with getCO2(false) */
 
         CO2 = readCO2Sensor().toInt();
-          // Request CO2 (as ppm)
+        // Request CO2 (as ppm)
 
         Serial.println("Reading Sensors:");
         Serial.print("CO2 (ppm): ");
