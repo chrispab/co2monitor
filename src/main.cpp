@@ -46,8 +46,6 @@ LedFader lowLevelLED(GREEN_LED_PIN, 2, 0, 255, HEART_BEAT_TIME, true);
 #define HEART_BEAT_TIME 500
 LedFader mediumLevelLED(YELLOW_LED_PIN, 3, 0, 255, HEART_BEAT_TIME, true);
 
-unsigned long getDataTimer = 0;
-
 const char *work_ssid = "BTF_Staff";
 // const char* work_ssid = "btf_staff";
 const char *work_password = "Rei1Vnbu!";
@@ -107,17 +105,22 @@ String apiKeyValue = "tPmAT5Ab3j7F9";
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 #define OLED_RESET -1        // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3C  ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+#define SSD1306_NO_SPLASH 1
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+// fonts
+// https://github.com/adafruit/Adafruit-GFX-Library/tree/master/Fonts
 #include <Fonts/FreeMonoBold12pt7b.h>
-
+#include <Fonts/FreeSans12pt7b.h>
+#include <Fonts/FreeSans9pt7b.h>
 #include <Fonts/FreeSansBold12pt7b.h>
 #include <Fonts/FreeSansBold18pt7b.h>
 
-#define NUMFLAKES 10  // Number of snowflakes in the animation example
+// #define NUMFLAKES 10  // Number of snowflakes in the animation example
 
 #define LOGO_HEIGHT 16
 #define LOGO_WIDTH 16
+
 static const unsigned char PROGMEM logo_bmp[] =
     {0b00000000, 0b11000000,
      0b00000001, 0b11000000,
@@ -172,7 +175,7 @@ void setup_wifi() {
 
     //try work wifi first
     boolean connected = false;
-    connected = try_wifi_connect(work_ssid, work_password);
+    //! connected = try_wifi_connect(work_ssid, work_password);
     if (!connected) {
         connected = try_wifi_connect(home_ssid, home_password);
     }
@@ -273,6 +276,16 @@ String readCO2Sensor() {
 }
 #define FORMAT_SPIFFS_IF_FAILED true
 
+void init_display() {
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 0);
+
+    display.println("Initialising..");
+    display.display();
+}
+
 void setup() {
     delay(2000);
     heartBeatLED.begin();
@@ -340,7 +353,7 @@ void setup() {
     Serial.print("\n");
     Serial.println("Use the above URL in your Browser to access the CO2 monitor Web Server\n");
 
-    // getDataTimer = millis() - 11000;
+    // lastDisplayUpdate = millis() - 11000;
     // Route for root / web page
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) { request->send(SPIFFS, "/index.html"); });
     server.on("/co2", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -368,24 +381,20 @@ void setup() {
         for (;;)
             ;  // Don't proceed, loop forever
     }
+    delay(2000);  // Pause for 2 seconds for display init
+                  // Show initial display buffer contents on the screen --
+                  // the library initializes this with an Adafruit splash screen.
+                  // display.display();
+                  // delay(1000);  // Pause for 2 seconds
 
-    // Show initial display buffer contents on the screen --
-    // the library initializes this with an Adafruit splash screen.
-    display.display();
-    delay(1000);  // Pause for 2 seconds
+    // // Clear the buffer
+    init_display();
 
-    // Clear the buffer
-    display.clearDisplay();
-
-    display.setTextSize(2);
-    display.setTextColor(WHITE);
-    display.setCursor(0, 0);
-    // Display static text
-    display.println("Hello, world!");
-    display.display();
+    delay(1000);
 }
 
-void postDataToRemoteDB(int CO2, float Temperature, float Humidity) {
+int postDataToRemoteDB(int CO2, float Temperature, float Humidity) {
+    int resultCode = 0;
     //Check WiFi connection status
     if (WiFi.status() == WL_CONNECTED) {
         WiFiClient client;
@@ -403,10 +412,10 @@ void postDataToRemoteDB(int CO2, float Temperature, float Humidity) {
         String httpRequestData = "api_key=" + apiKeyValue + "&value1=" + String(CO2) + "&value2=" + String(Temperature, 1) + "&value3=" + String(Humidity, 1);
         // Serial.println(String(Temperature, 1));
 
-        Serial.print("remote server");
+        Serial.print("remote server : ");
         Serial.println(serverName);
 
-        Serial.print("httpRequestData: ");
+        Serial.print("httpRequestData : ");
         Serial.println(httpRequestData);
 
         // You can comment the httpRequestData variable above
@@ -424,21 +433,24 @@ void postDataToRemoteDB(int CO2, float Temperature, float Humidity) {
         //http.addHeader("Content-Type", "application/json");
         //int httpResponseCode = http.POST("{\"value1\":\"19\",\"value2\":\"67\",\"value3\":\"78\"}");
 
-        if (httpResponseCode > 0) {
+        if (httpResponseCode > 0) {  // got a response code from server so opk - not neccsarily 200 ok, poss 500, 4304 etc
             Serial.print("HTTP Response code: ");
             Serial.println(httpResponseCode);
-        } else {
+        } else {  //error, -1,  probably cos of bad connection e.g dns failure etc
             Serial.print("Error code: ");
             Serial.println(httpResponseCode);
         }
+        resultCode = httpResponseCode;
         // Free resources
         http.end();
     } else {
         Serial.println("WiFi Disconnected");
+        resultCode = 0;
     }
+    return resultCode;
 }
 
-void updateLEDDisplay(int co2) {
+void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     int highLevel = 800;
     int mediumLevel = 700;
     // int lowLevel = 400;
@@ -447,7 +459,7 @@ void updateLEDDisplay(int co2) {
     // int period =
     //in 400 to 1000, slow fast
     // 1200 - in
-    unsigned long msPerCycle = (2000 - (unsigned long)co2) / 3;
+    unsigned long msPerCycle = (3000 - (unsigned long)co2) / 3;
     // lowLevelLED.setMsPerCycle(msPerCycle);
     // mediumLevelLED.setMsPerCycle(msPerCycle);
     // highLevelLED.setMsPerCycle(msPerCycle);
@@ -480,26 +492,49 @@ void updateLEDDisplay(int co2) {
         Serial.println(co2);
     }
 
-    char string[20];
-    itoa(co2, string, 10);
+    char co2string[20];
+    itoa(co2, co2string, 10);
     // display.setFont(&FreeMonoBold12pt7b);
-    display.setFont(&FreeSansBold12pt7b);
     // display.setFont(&FreeSansBold18pt7b);
 
     // Clear the buffer
     display.clearDisplay();
-
     display.setTextSize(1);
     display.setTextColor(WHITE);
-    display.setCursor(0, 25);
-    // Display static text
-    display.print(string);
-    // display.print(");
-    display.println(" ppm");
+
+    //co2 val
+    // display.setCursor(0, 10);
+    display.setFont(&FreeSans12pt7b);
+    display.setCursor(0, 16);
+    // display.setFont(&FreeSans12pt7b);
+    display.print(co2string);
+    display.setFont(&FreeSans9pt7b);
+    display.print("ppm");
+
+    //deg c val
+    display.setFont(&FreeSans9pt7b);
+    display.setCursor(81, 16);
+    display.printf("%.1f", Temperature);
+    display.print("C");
+    //humi
+    display.setFont(&FreeSans9pt7b);
+    display.setCursor(81, 31);
+    display.printf("%.1f", Humidity);
+    display.print("H");
+
+    // ip address
+    display.setFont();
+    display.setTextSize(1);
+    display.setCursor(0, 25);  //!25 is optimal for size 1 default bitmap font
+    display.print(WiFi.localIP());
+
     display.display();
 }
 
 int CO2 = 100;
+
+unsigned long updateInterval = 15000;
+unsigned long lastDisplayUpdate = millis() - updateInterval - 100;
 
 // Current time
 unsigned long currentTime = millis();
@@ -514,26 +549,30 @@ void loop() {
     mediumLevelLED.update();
     highLevelLED.update();
 
-    if (millis() - getDataTimer >= 15000) {  //get data every n ms
+    if (millis() - lastDisplayUpdate >= updateInterval) {  //get data every n ms
         /* note: getCO2() default is command "CO2 Unlimited". This returns the correct CO2 reading even 
         if below background CO2 levels or above range (useful to validate sensor). You can use the 
         usual documented command with getCO2(false) */
 
         CO2 = readCO2Sensor().toInt();
         // Request CO2 (as ppm)
+        float temperature = dht22.getTemperature();
+        float humidity = dht22.getHumidity();
+        // float temperature = roundf(dht22.getTemperature() * 10) / 10;
+        // float humidity = roundf(dht22.getHumidity() * 10) / 10;
 
         Serial.println("Reading Sensors:");
         Serial.print("CO2 (ppm): ");
         Serial.println(CO2);
         Serial.print("Temperature (C): ");
-        Serial.println(dht22.getTemperature());
+        Serial.println(temperature);
         Serial.print("Humidity (C): ");
-        Serial.println(dht22.getHumidity());
+        Serial.println(humidity);
 
-        updateLEDDisplay(CO2);
+        updateLEDDisplay(CO2, temperature, humidity);
 
         if (WiFi.status() != WL_CONNECTED) {
-            Serial.println("WiFi is NOT connected - trying wifi_setup()");
+            Serial.println("WiFi is NOT connected - trying setup_wifi()");
             setup_wifi();
         }
         if (WiFi.SSID() == home_ssid) {
@@ -551,9 +590,13 @@ void loop() {
                 Serial.println("MQTT NOT connected - cant publish CO2");
         }
         //send the data to the remote db to store
-        postDataToRemoteDB(CO2, dht22.getTemperature(), dht22.getHumidity());
+        int postStatus = postDataToRemoteDB(CO2, dht22.getTemperature(), dht22.getHumidity());
+        if (postStatus < 0) {
+            Serial.println("WiFi status is < 0 - trying setup_wifi()");
+            setup_wifi();
+        }
 
-        getDataTimer = millis();
+        lastDisplayUpdate = millis();
     }
 }
 
