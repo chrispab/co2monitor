@@ -9,9 +9,17 @@
 #include <SPIFFS.h>
 #include <WiFi.h>
 
+// ArduinoOTA
+// #include <WiFi.h>
+#include <ArduinoOTA.h>
+#include <ESPmDNS.h>
+#include <WiFiUdp.h>
+
 #include "DHTesp.h"
 #include "LedFader.h"
 #include "MHZ19.h"
+#include "MyOTA.h"
+
 // #define RX_PIN 10                                          // Rx pin which the MHZ19 Tx pin is attached to
 // #define TX_PIN 11                                          // Tx pin which the MHZ19 Rx pin is attached to
 #define MHZ19_BAUDRATE 9600  // Device to MH-Z19 Serial baudrate (should not be changed)
@@ -391,6 +399,8 @@ void setup() {
     init_display();
 
     delay(1000);
+
+    setupOTA();
 }
 
 int postDataToRemoteDB(int CO2, float Temperature, float Humidity) {
@@ -598,6 +608,7 @@ void loop() {
 
         lastDisplayUpdate = millis();
     }
+    ArduinoOTA.handle();
 }
 
 //to upload /data folder to device SPIFFS
