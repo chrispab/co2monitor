@@ -89,6 +89,8 @@ int value = 0;
 #define dhtPin 25
 DHTesp dht22;
 
+#define KEYPAD_PIN 36  //GPIO36 pyhs pin 14 LHS
+
 // REPLACE with your Domain name and URL path or IP address with path
 // const char* serverName = "http://example.com/post-data.php";
 // const char* serverName = "http://192.168.0.50:8080/post-data.php"; // dell pc
@@ -609,6 +611,9 @@ void loop() {
         lastDisplayUpdate = millis();
     }
     ArduinoOTA.handle();
+
+    // Serial.println(analogRead(KEYPAD_PIN));
+    // delay(100);
 }
 
 //to upload /data folder to device SPIFFS

@@ -1,0 +1,15 @@
+https://arduinogetstarted.com/library/arduino-analog-keypad-example
+
+keypad vcc to 3v3
+gnd to 0v
+keypad analog out to ADC1-CH0 - GPIO36
+
+
+vals
+none pressed - 4095
+sw1 (left) - 0
+sw2 (TOP) - 415 to 400
+sw3 (bottom) - 1140 to 1150
+sw4 (right) - 1840 to 1855
+
+sw5(enter) - 2785 to 2800
