@@ -14,6 +14,7 @@
 #include <ArduinoOTA.h>
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
+#include <ezAnalogKeypad.h>
 
 #include "DHTesp.h"
 #include "LedFader.h"
@@ -89,7 +90,8 @@ int value = 0;
 #define dhtPin 25
 DHTesp dht22;
 
-#define KEYPAD_PIN 36  //GPIO36 pyhs pin 14 LHS
+#define KEYPAD_PIN 36               //GPIO36 pyhs pin 14 LHS
+ezAnalogKeypad keypad(KEYPAD_PIN);  // create ezAnalogKeypad object that attach to pin KEYPAD_PIN
 
 // REPLACE with your Domain name and URL path or IP address with path
 // const char* serverName = "http://example.com/post-data.php";
@@ -278,6 +280,11 @@ String readCO2Sensor() {
             return String(lastGoodCO2ppm);
         }
     } else {
+        int8_t Temp;
+        Temp = myMHZ19.getTemperature();  // Request Temperature (as Celsius)
+        Serial.print("MHZ Temperature (C): ");
+        Serial.println(Temp);
+
         // Serial.print("Sensor reads : ");
         // Serial.println(CO2ppm);
         lastGoodCO2ppm = CO2ppm;
@@ -403,6 +410,31 @@ void setup() {
     delay(1000);
 
     setupOTA();
+
+    // vals
+    // none pressed - 4095
+    // sw1 (left) - 0
+    // sw2 (up) - 415 to 400
+    // sw3 (bottom) - 1140 to 1150
+    // sw4 (right) - 1840 to 1855
+    // sw5(enter) - 2785 to 2800
+    // keypad.setDebounceTime(200);
+    // keypad.registerKey('l', 0);      // analog value when the key '1' is pressed
+    // keypad.registerKey('u', 410);      // analog value when the key '2' is pressed
+    // keypad.registerKey('d', 1145);   // analog value when the key '3' is pressed
+    // keypad.registerKey('r', 1850);  // analog value when the key '4' is pressed
+    // keypad.registerKey('e', 2790);  // analog value when the key '*' is pressed
+    // keypad.setNoPressValue(4095);       // analog value when no key is pressed
+
+    //inverted
+    int openval = 4095;
+    keypad.setDebounceTime(300);
+    keypad.setNoPressValue(openval - 4095);   // analog value when no key is pressed
+    keypad.registerKey('e', openval - 2790);  // analog value when the key '*' is pressed
+    keypad.registerKey('r', openval - 1840);  // analog value when the key '4' is pressed
+    keypad.registerKey('d', openval - 1145);  // analog value when the key '3' is pressed
+    keypad.registerKey('u', openval - 410);   // analog value when the key '2' is pressed
+    keypad.registerKey('l', openval - 0);     // analog value when the key '1' is pressed
 }
 
 int postDataToRemoteDB(int CO2, float Temperature, float Humidity) {
@@ -614,6 +646,11 @@ void loop() {
 
     // Serial.println(analogRead(KEYPAD_PIN));
     // delay(100);
+
+    unsigned char key = keypad.getKey();
+    if (key) {
+        Serial.println((char)key);
+    }
 }
 
 //to upload /data folder to device SPIFFS
