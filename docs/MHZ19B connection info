@@ -2,11 +2,14 @@ Connector: Black wire: ground, Red wire: +5volts, Blue wire: Rx, Green wire: Tx.
 
 looking from above with connector at bottom, from left to right wires
 :
-
-1. Yellow
-2. Green - Tx
-3. Blue - Rx
-4. Red - +5v
-5. Black - 0v
-6. White
-7. Brown
+//!The pins used by ESP32 are defined in this way:
+#define RX_PIN 16  // Rx pin which the MHZ19 Tx pin is attached to
+#define TX_PIN 17  // Tx pin which the MHZ19 Rx pin is attached to
+- wire - func   | conection to esp32
+1 - Yellow - na | nc
+2 - Green - Tx  | RX_PIN 16 GPIO_16 - rhs phys pin 6
+3 - Blue - Rx   | TX_PIN 17 GPIO_17 - rhs phys pin 7
+4 - Red - +5v   | +5v lhs phys pin 1
+5 - Black - 0v  | 0v lhs/rhs phys pin 2
+6 - White - na  | nc
+7 - Brown - na  | nc
