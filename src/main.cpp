@@ -43,15 +43,21 @@ MHZ19 myMHZ19;  // Constructor for library
 #define HEART_BEAT_TIME 500
 LedFader heartBeatLED(ESP32_ONBOARD_BLUE_LED_PIN, 0, 0, 255, HEART_BEAT_TIME, true);
 
-#define RED_LED_PIN GPIO_NUM_13  // LHS_P_3 esp32 devkit
+// #define RED_LED_PIN GPIO_NUM_13  // LHS_P_3 esp32 devkit
+#define RED_LED_PIN GPIO_NUM_14  // LHS_P_3 esp32 devkit
+
 #define HEART_BEAT_TIME 500
 LedFader highLevelLED(RED_LED_PIN, 1, 0, 255, HEART_BEAT_TIME, true);
 
-#define GREEN_LED_PIN GPIO_NUM_12  // LHS_P_4 esp32 devkit
+// #define GREEN_LED_PIN GPIO_NUM_12  // LHS_P_4 esp32 devkit
+#define GREEN_LED_PIN GPIO_NUM_13  // LHS_P_4 esp32 devkit
+
 #define HEART_BEAT_TIME 500
 LedFader lowLevelLED(GREEN_LED_PIN, 2, 0, 255, HEART_BEAT_TIME, true);
 
-#define YELLOW_LED_PIN GPIO_NUM_14  // LHS_P_5 esp32 devkit
+// #define YELLOW_LED_PIN GPIO_NUM_14  // LHS_P_5 esp32 devkit
+#define YELLOW_LED_PIN GPIO_NUM_12  // LHS_P_5 esp32 devkit
+
 #define HEART_BEAT_TIME 500
 LedFader mediumLevelLED(YELLOW_LED_PIN, 3, 0, 255, HEART_BEAT_TIME, true);
 
