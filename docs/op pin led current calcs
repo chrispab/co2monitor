@@ -1,0 +1,6 @@
+led 20ma @ 3v op on pin, 3v3 vcc
+1.2v led v drop = 1.8v drive v
+
+so r=1.8/20ma
+
+r = 90 ohms
