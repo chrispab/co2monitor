@@ -1,5 +1,5 @@
 https://arduinogetstarted.com/library/arduino-analog-keypad-example
-
+https://arduinogetstarted.com/library/arduino-analog-keypad-example#content_about_ezanalogkeypad_library
 keypad vcc to 3v3
 gnd to 0v
 keypad analog out to ADC1-CH0 - GPIO36
