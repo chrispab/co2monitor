@@ -61,6 +61,26 @@ LedFader lowLevelLED(GREEN_LED_PIN, 2, 0, 255, HEART_BEAT_TIME, true);
 #define HEART_BEAT_TIME 500
 LedFader mediumLevelLED(YELLOW_LED_PIN, 3, 0, 255, HEART_BEAT_TIME, true);
 
+#define SOUNDER_PIN GPIO_NUM_15  // rHS_P_3 esp32 devkit
+
+#define BUZZER_PIN SOUNDER_PIN
+
+#ifdef ARDUINO_ARCH_ESP32
+
+#define SOUND_PWM_CHANNEL 4
+#define SOUND_RESOLUTION 8                      // 8 bit resolution
+#define SOUND_ON (1 << (SOUND_RESOLUTION - 1))  // 50% duty cycle
+#define SOUND_OFF 0                             // 0% duty cycle
+
+void tone(int pin, int frequency, int duration) {
+    ledcSetup(SOUND_PWM_CHANNEL, frequency, SOUND_RESOLUTION);  // Set up PWM channel
+    ledcAttachPin(pin, SOUND_PWM_CHANNEL);                      // Attach channel to pin
+    ledcWrite(SOUND_PWM_CHANNEL, SOUND_ON);
+    delay(duration);
+    ledcWrite(SOUND_PWM_CHANNEL, SOUND_OFF);
+}
+
+#endif
 const char *work_ssid = "BTF_Staff";
 // const char* work_ssid = "btf_staff";
 const char *work_password = "Rei1Vnbu!";
@@ -311,6 +331,8 @@ void init_display() {
 
 void setup() {
     delay(2000);
+    pinMode(SOUNDER_PIN, OUTPUT);
+    digitalWrite(SOUNDER_PIN, LOW);
     heartBeatLED.begin();
     lowLevelLED.begin();
     mediumLevelLED.begin();
@@ -500,6 +522,24 @@ int postDataToRemoteDB(int CO2, float Temperature, float Humidity) {
     return resultCode;
 }
 
+void beep(size_t length) {
+    size_t wait = 1;
+    for (size_t i = 0; i < length; i++) {
+        digitalWrite(SOUNDER_PIN, HIGH);
+        // for (size_t i = 0; i < wait; i++) {
+        //     i++;
+        //     i--;
+        // }
+        delay(1);
+        digitalWrite(SOUNDER_PIN, LOW);
+        // for (size_t i = 0; i < wait; i++) {
+        //     i++;
+        //     i--;
+        // }
+        delay(1);
+    }
+}
+
 void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     int highLevel = 800;
     int mediumLevel = 700;
@@ -521,6 +561,8 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
         mediumLevelLED.fullOff();
         highLevelLED.on();
         highLevelLED.setMsPerCycle(msPerCycle);
+        tone(SOUNDER_PIN, 440, 250);
+        tone(SOUNDER_PIN, 880, 250);
 
         Serial.print("highLevel: ");
         Serial.println(co2);
@@ -529,7 +571,11 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
         mediumLevelLED.on();
         highLevelLED.fullOff();
         mediumLevelLED.setMsPerCycle(msPerCycle);
-
+        // digitalWrite(SOUNDER_PIN, HIGH);
+        // delay(300);
+        // digitalWrite(SOUNDER_PIN, LOW);
+        tone(SOUNDER_PIN, 880, 150);
+        // tone(SOUNDER_PIN, 440, 500);
         Serial.print("mediumLevel: ");
         Serial.println(co2);
     } else {
@@ -537,7 +583,9 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
         mediumLevelLED.fullOff();
         highLevelLED.fullOff();
         lowLevelLED.setMsPerCycle(msPerCycle);
-
+        // beep(200);
+        // delay(200);
+        tone(SOUNDER_PIN, 440, 10);
         Serial.print("lowLevel: ");
         Serial.println(co2);
     }
