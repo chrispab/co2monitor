@@ -585,7 +585,7 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
         lowLevelLED.setMsPerCycle(msPerCycle);
         // beep(200);
         // delay(200);
-        tone(SOUNDER_PIN, 440, 10);
+        // tone(SOUNDER_PIN, 440, 10);
         Serial.print("lowLevel: ");
         Serial.println(co2);
     }
@@ -704,6 +704,13 @@ void loop() {
     unsigned char key = keypad.getKey();
     if (key) {
         Serial.println((char)key);
+
+        if (key == 'r'){
+            tone(SOUNDER_PIN, 880, 200);
+            tone(SOUNDER_PIN, 660, 200);
+            tone(SOUNDER_PIN, 440, 200);
+
+        }
     }
 }
 
