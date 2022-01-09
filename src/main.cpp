@@ -539,6 +539,7 @@ void beep(size_t length) {
         delay(1);
     }
 }
+boolean audibleWarning = true;
 
 void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     int highLevel = 800;
@@ -561,9 +562,10 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
         mediumLevelLED.fullOff();
         highLevelLED.on();
         highLevelLED.setMsPerCycle(msPerCycle);
-        tone(SOUNDER_PIN, 440, 250);
-        tone(SOUNDER_PIN, 880, 250);
-
+        if (audibleWarning) {
+            tone(SOUNDER_PIN, 440, 250);
+            tone(SOUNDER_PIN, 880, 250);
+        }
         Serial.print("highLevel: ");
         Serial.println(co2);
     } else if (co2 >= mediumLevel) {
@@ -574,7 +576,9 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
         // digitalWrite(SOUNDER_PIN, HIGH);
         // delay(300);
         // digitalWrite(SOUNDER_PIN, LOW);
-        tone(SOUNDER_PIN, 880, 150);
+        if (audibleWarning) {
+            tone(SOUNDER_PIN, 880, 150);
+        }
         // tone(SOUNDER_PIN, 440, 500);
         Serial.print("mediumLevel: ");
         Serial.println(co2);
@@ -641,6 +645,7 @@ unsigned long previousTime = 0;
 // Define timeout time in milliseconds (example: 2000ms = 2s)
 const long timeoutTime = 2000;
 
+
 void loop() {
     heartBeatLED.update();
     lowLevelLED.update();
@@ -705,11 +710,23 @@ void loop() {
     if (key) {
         Serial.println((char)key);
 
-        if (key == 'r'){
-            tone(SOUNDER_PIN, 880, 200);
-            tone(SOUNDER_PIN, 660, 200);
-            tone(SOUNDER_PIN, 440, 200);
+        if (key == 'r') {
+            // toggle audible warning beeps
+            if (audibleWarning == false) {
+                audibleWarning = true;
+                Serial.println("Audio warings ON");
 
+                tone(SOUNDER_PIN, 440, 200);
+                tone(SOUNDER_PIN, 660, 200);
+                tone(SOUNDER_PIN, 880, 200);
+
+            } else {
+                audibleWarning = false;
+                Serial.println("Audio warings OFF");
+                tone(SOUNDER_PIN, 880, 200);
+                tone(SOUNDER_PIN, 660, 200);
+                tone(SOUNDER_PIN, 440, 200);
+            }
         }
     }
 }
