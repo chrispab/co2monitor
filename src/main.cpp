@@ -714,7 +714,7 @@ void loop() {
             // toggle audible warning beeps
             if (audibleWarning == false) {
                 audibleWarning = true;
-                Serial.println("Audio warings ON");
+                Serial.println("Audio warnings ON");
 
                 tone(SOUNDER_PIN, 440, 200);
                 tone(SOUNDER_PIN, 660, 200);
@@ -722,7 +722,7 @@ void loop() {
 
             } else {
                 audibleWarning = false;
-                Serial.println("Audio warings OFF");
+                Serial.println("Audio warnings OFF");
                 tone(SOUNDER_PIN, 880, 200);
                 tone(SOUNDER_PIN, 660, 200);
                 tone(SOUNDER_PIN, 440, 200);
