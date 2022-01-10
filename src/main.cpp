@@ -137,14 +137,35 @@ String apiKeyValue = "tPmAT5Ab3j7F9";
 #include <SPI.h>
 #include <Wire.h>
 
+//******************************** u8g2 start
+// create the display object
+#include "Display.h"
+
+#define OLED_CLOCK_PIN GPIO_NUM_22  //RHS_P_14 SCL
+#define OLED_DATA_PIN GPIO_NUM_21   //RHS_P_11 SDA
+Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, OLED_CLOCK_PIN, OLED_DATA_PIN);
+
+enum displayModes {
+    NORMAL,
+    BIG_TEMP,
+    MULTI
+};
+
+//#define SYS_FONT u8g2_font_8x13_tf
+#define SYS_FONT u8g2_font_6x12_tf        // 7 px high
+#define BIG_TEMP_FONT u8g2_font_fub30_tf  //30px hieght
+// 33 too big - #define BIG_TEMP_FONT u8g2_font_inb33_mf
+//********************************ug82 end
+
+// ***********************************adafruit lib start ============================
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
-#define SCREEN_HEIGHT 32  // OLED display height, in pixels
+#define SCREEN_HEIGHT 64  // OLED display height, in pixels
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 #define OLED_RESET -1        // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3C  ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 #define SSD1306_NO_SPLASH 1
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+// Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // fonts
 // https://github.com/adafruit/Adafruit-GFX-Library/tree/master/Fonts
@@ -176,7 +197,7 @@ static const unsigned char PROGMEM logo_bmp[] =
      0b01111100, 0b11110000,
      0b01110000, 0b01110000,
      0b00000000, 0b00110000};
-
+// *************************************************adafriut oled lib end
 boolean try_wifi_connect(const char *ssid, const char *password) {
     WiFi.begin(ssid, password);
     //try to connect for 5 secs
@@ -320,13 +341,28 @@ String readCO2Sensor() {
 #define FORMAT_SPIFFS_IF_FAILED true
 
 void init_display() {
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setCursor(0, 0);
+    // display.clearDisplay();
+    // display.setTextSize(1);
+    // display.setTextColor(WHITE);
+    // display.setCursor(0, 0);
 
-    display.println("Initialising..");
-    display.display();
+    // display.println("Initialising..");
+    // display.display();
+
+    myDisplay.begin();
+    // display.clearDisplay();
+    // display.setTextSize(1);
+    // display.setTextColor(WHITE);
+    // display.setCursor(0, 0);
+    myDisplay.clearBuffer();
+    myDisplay.setFont(u8g2_font_fub17_tr);
+
+    // strcpy(justTempString, &tempDisplayString[6]);
+    myDisplay.drawStr(0, 38, "Initialising");
+    // display.println("Initialising..");
+
+    myDisplay.sendBuffer();
+    // display.display();
 }
 
 void setup() {
@@ -420,19 +456,19 @@ void setup() {
     server.begin();
     Serial.println("CO2 monitor Web Server Started");
 
-    // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-    if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-        Serial.println(F("SSD1306 allocation failed"));
-        for (;;)
-            ;  // Don't proceed, loop forever
-    }
-    delay(2000);  // Pause for 2 seconds for display init
-                  // Show initial display buffer contents on the screen --
-                  // the library initializes this with an Adafruit splash screen.
-                  // display.display();
-                  // delay(1000);  // Pause for 2 seconds
+    // // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+    // if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    //     Serial.println(F("SSD1306 allocation failed"));
+    //     for (;;)
+    //         ;  // Don't proceed, loop forever
+    // }
+    // delay(2000);  // Pause for 2 seconds for display init
+    //               // Show initial display buffer contents on the screen --
+    //               // the library initializes this with an Adafruit splash screen.
+    //               // display.display();
+    //               // delay(1000);  // Pause for 2 seconds
 
-    // // Clear the buffer
+    // // // Clear the buffer
     init_display();
 
     delay(1000);
@@ -596,41 +632,56 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
 
     char co2string[20];
     itoa(co2, co2string, 10);
+
+    myDisplay.clearBuffer();
+    myDisplay.setFont(BIG_TEMP_FONT);
+
+    // strcpy(justTempString, &tempDisplayString[6]);
+    // strcat(co2string,"ppm");
+    // myDisplay.drawHLine(0,0,127);
+    myDisplay.drawStr(0, 30, co2string);
+    
+    myDisplay.setFont(u8g2_font_fub17_tr);
+    myDisplay.drawStr(70, 30, "ppm");
+
+    // display.println("Initialising..");
+
+    myDisplay.sendBuffer();
     // display.setFont(&FreeMonoBold12pt7b);
     // display.setFont(&FreeSansBold18pt7b);
 
     // Clear the buffer
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
+    // display.clearDisplay();
+    // display.setTextSize(1);
+    // display.setTextColor(WHITE);
 
-    //co2 val
-    // display.setCursor(0, 10);
-    display.setFont(&FreeSans12pt7b);
-    display.setCursor(0, 16);
+    // //co2 val
+    // // display.setCursor(0, 10);
     // display.setFont(&FreeSans12pt7b);
-    display.print(co2string);
-    display.setFont(&FreeSans9pt7b);
-    display.print("ppm");
+    // display.setCursor(0, 16);
+    // // display.setFont(&FreeSans12pt7b);
+    // display.print(co2string);
+    // display.setFont(&FreeSans9pt7b);
+    // display.print("ppm");
 
-    //deg c val
-    display.setFont(&FreeSans9pt7b);
-    display.setCursor(81, 16);
-    display.printf("%.1f", Temperature);
-    display.print("C");
-    //humi
-    display.setFont(&FreeSans9pt7b);
-    display.setCursor(81, 31);
-    display.printf("%.1f", Humidity);
-    display.print("H");
+    // //deg c val
+    // display.setFont(&FreeSans9pt7b);
+    // display.setCursor(81, 16);
+    // display.printf("%.1f", Temperature);
+    // display.print("C");
+    // //humi
+    // display.setFont(&FreeSans9pt7b);
+    // display.setCursor(81, 31);
+    // display.printf("%.1f", Humidity);
+    // display.print("H");
 
-    // ip address
-    display.setFont();
-    display.setTextSize(1);
-    display.setCursor(0, 25);  //!25 is optimal for size 1 default bitmap font
-    display.print(WiFi.localIP());
+    // // ip address
+    // display.setFont();
+    // display.setTextSize(1);
+    // display.setCursor(0, 25);  //!25 is optimal for size 1 default bitmap font
+    // display.print(WiFi.localIP());
 
-    display.display();
+    // display.display();
 }
 
 int CO2 = 100;
@@ -644,7 +695,6 @@ unsigned long currentTime = millis();
 unsigned long previousTime = 0;
 // Define timeout time in milliseconds (example: 2000ms = 2s)
 const long timeoutTime = 2000;
-
 
 void loop() {
     heartBeatLED.update();
