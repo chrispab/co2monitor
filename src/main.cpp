@@ -575,7 +575,7 @@ void beep(size_t length) {
         delay(1);
     }
 }
-boolean audibleWarning = true;
+boolean audibleWarning = false;
 
 void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     int highLevel = 800;
@@ -635,18 +635,39 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
 
     myDisplay.clearBuffer();
     myDisplay.setFont(BIG_TEMP_FONT);
+    myDisplay.setFont(u8g2_font_fub30_tf);
+    myDisplay.setFont(u8g2_font_fur30_tr);
+
+    // myDisplay.setFont(u8g2_font_profont29_tf);
+    // myDisplay.setFont(u8x8_font_profont29_2x3_r);
 
     // strcpy(justTempString, &tempDisplayString[6]);
     // strcat(co2string,"ppm");
     // myDisplay.drawHLine(0,0,127);
     myDisplay.drawStr(0, 30, co2string);
-    
-    myDisplay.setFont(u8g2_font_fub17_tr);
+
+    myDisplay.setFont(u8g2_font_fur17_tr);
+    myDisplay.setFont(u8g2_font_fur11_tr);
+
+    // myDisplay.setFont(u8g2_font_profont22_tf);
     myDisplay.drawStr(70, 30, "ppm");
 
     // display.println("Initialising..");
 
-    myDisplay.sendBuffer();
+    //!audio alert indicator
+
+    myDisplay.setFont(u8g2_font_streamline_interface_essential_alert_t);
+    char iconString[2];
+    if (audibleWarning) {
+        iconString[0] = '\x33';  //alarm on
+    } else {
+        iconString[0] = '\x30';  //alarm off
+    }
+
+    iconString[1] = '\x00';
+
+    myDisplay.drawStr(107, 21, iconString);
+
     // display.setFont(&FreeMonoBold12pt7b);
     // display.setFont(&FreeSansBold18pt7b);
 
@@ -669,6 +690,30 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     // display.setCursor(81, 16);
     // display.printf("%.1f", Temperature);
     // display.print("C");
+    char tempStr[7];
+
+    dtostrf(Temperature, 3, 1, tempStr);
+    tempStr[4] = '\xb0';
+        tempStr[5] = 'C';
+    tempStr[6] = '\x00';
+
+    myDisplay.setFont(u8g2_font_fur11_tf);
+
+    myDisplay.drawStr(0, 63, tempStr);
+
+
+    char humiStr[7];
+
+    dtostrf(Humidity, 3, 1, humiStr);
+    humiStr[4] = '%';
+        humiStr[5] = 'H';
+    humiStr[6] = '\x00';
+
+    myDisplay.setFont(u8g2_font_fur11_tf);
+
+    myDisplay.drawStr(63, 63, humiStr);
+    // myDisplay.printf("%.1f", Temperature);
+    // myDisplay.
     // //humi
     // display.setFont(&FreeSans9pt7b);
     // display.setCursor(81, 31);
@@ -680,6 +725,7 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     // display.setTextSize(1);
     // display.setCursor(0, 25);  //!25 is optimal for size 1 default bitmap font
     // display.print(WiFi.localIP());
+    myDisplay.sendBuffer();
 
     // display.display();
 }
@@ -696,6 +742,8 @@ unsigned long previousTime = 0;
 // Define timeout time in milliseconds (example: 2000ms = 2s)
 const long timeoutTime = 2000;
 
+float temperature;
+float humidity;
 void loop() {
     heartBeatLED.update();
     lowLevelLED.update();
@@ -709,8 +757,8 @@ void loop() {
 
         CO2 = readCO2Sensor().toInt();
         // Request CO2 (as ppm)
-        float temperature = dht22.getTemperature();
-        float humidity = dht22.getHumidity();
+        temperature = dht22.getTemperature();
+        humidity = dht22.getHumidity();
         // float temperature = roundf(dht22.getTemperature() * 10) / 10;
         // float humidity = roundf(dht22.getHumidity() * 10) / 10;
 
@@ -765,7 +813,7 @@ void loop() {
             if (audibleWarning == false) {
                 audibleWarning = true;
                 Serial.println("Audio warnings ON");
-
+                updateLEDDisplay(CO2, temperature, humidity);
                 tone(SOUNDER_PIN, 440, 200);
                 tone(SOUNDER_PIN, 660, 200);
                 tone(SOUNDER_PIN, 880, 200);
@@ -773,6 +821,8 @@ void loop() {
             } else {
                 audibleWarning = false;
                 Serial.println("Audio warnings OFF");
+                updateLEDDisplay(CO2, temperature, humidity);
+
                 tone(SOUNDER_PIN, 880, 200);
                 tone(SOUNDER_PIN, 660, 200);
                 tone(SOUNDER_PIN, 440, 200);
