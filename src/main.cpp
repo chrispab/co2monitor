@@ -576,11 +576,13 @@ void beep(size_t length) {
     }
 }
 boolean audibleWarning = false;
+int previousCO2 = 400;
 
 void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     int highLevel = 800;
     int mediumLevel = 700;
     // int lowLevel = 400;
+    boolean co2Rising;
 
     //calc val for beat period
     // int period =
@@ -592,6 +594,13 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     // highLevelLED.setMsPerCycle(msPerCycle);
     Serial.print("msPerCycle: ");
     Serial.println(msPerCycle);
+
+    if (co2 >= previousCO2) {
+        co2Rising = true;
+    } else {
+        co2Rising = false;
+    }
+    previousCO2 = co2;
 
     if (co2 >= highLevel) {
         lowLevelLED.fullOff();
@@ -641,21 +650,32 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     // myDisplay.setFont(u8g2_font_profont29_tf);
     // myDisplay.setFont(u8x8_font_profont29_2x3_r);
 
-    // strcpy(justTempString, &tempDisplayString[6]);
-    // strcat(co2string,"ppm");
-    // myDisplay.drawHLine(0,0,127);
+    myDisplay.setFont(u8g2_font_profont29_tf);
+    int charW = 16;
+
+    // myDisplay.setFont(u8g2_font_inr24_mf);
+
     myDisplay.drawStr(0, 30, co2string);
 
     myDisplay.setFont(u8g2_font_fur17_tr);
     myDisplay.setFont(u8g2_font_fur11_tr);
-
     // myDisplay.setFont(u8g2_font_profont22_tf);
-    myDisplay.drawStr(70, 30, "ppm");
+    // myDisplay.drawStr(70, 30, "ppm");
+    myDisplay.drawStr((strlen(co2string) * charW) + 0, 30, "ppm");
 
     // display.println("Initialising..");
 
-    //!audio alert indicator
+    myDisplay.setFont(u8g2_font_open_iconic_arrow_2x_t);
+    char trendString[2];
+    if (co2Rising) {
+        trendString[0] = '\x47';  //up on
+    } else {
+        trendString[0] = '\x44';  //down on
+    }
+    trendString[1] = '\x00';
+    myDisplay.drawStr(85, 17, trendString);
 
+    //!audio alert indicator
     myDisplay.setFont(u8g2_font_streamline_interface_essential_alert_t);
     char iconString[2];
     if (audibleWarning) {
@@ -694,22 +714,28 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
 
     dtostrf(Temperature, 3, 1, tempStr);
     tempStr[4] = '\xb0';
-        tempStr[5] = 'C';
+    tempStr[5] = 'C';
     tempStr[6] = '\x00';
 
     myDisplay.setFont(u8g2_font_fur11_tf);
+    myDisplay.setFont(u8g2_font_profont22_tf);
+    myDisplay.setFont(u8g2_font_10x20_tf);
+    myDisplay.setFont(u8g2_font_fur14_tf);
+    myDisplay.setFont(u8g2_font_fub11_tf);
+    myDisplay.setFont(u8g2_font_profont17_tf);
+
+    // u8g2_font_profont22_tf
 
     myDisplay.drawStr(0, 63, tempStr);
-
 
     char humiStr[7];
 
     dtostrf(Humidity, 3, 1, humiStr);
     humiStr[4] = '%';
-        humiStr[5] = 'H';
+    humiStr[5] = 'H';
     humiStr[6] = '\x00';
 
-    myDisplay.setFont(u8g2_font_fur11_tf);
+    // myDisplay.setFont(u8g2_font_fur11_tf);
 
     myDisplay.drawStr(63, 63, humiStr);
     // myDisplay.printf("%.1f", Temperature);
