@@ -158,45 +158,45 @@ enum displayModes {
 //********************************ug82 end
 
 // ***********************************adafruit lib start ============================
-#define SCREEN_WIDTH 128  // OLED display width, in pixels
-#define SCREEN_HEIGHT 64  // OLED display height, in pixels
+// #define SCREEN_WIDTH 128  // OLED display width, in pixels
+// #define SCREEN_HEIGHT 64  // OLED display height, in pixels
 
-// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
-#define OLED_RESET -1        // Reset pin # (or -1 if sharing Arduino reset pin)
-#define SCREEN_ADDRESS 0x3C  ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-#define SSD1306_NO_SPLASH 1
-// Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+// // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+// #define OLED_RESET -1        // Reset pin # (or -1 if sharing Arduino reset pin)
+// #define SCREEN_ADDRESS 0x3C  ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+// #define SSD1306_NO_SPLASH 1
+// // Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-// fonts
-// https://github.com/adafruit/Adafruit-GFX-Library/tree/master/Fonts
-#include <Fonts/FreeMonoBold12pt7b.h>
-#include <Fonts/FreeSans12pt7b.h>
-#include <Fonts/FreeSans9pt7b.h>
-#include <Fonts/FreeSansBold12pt7b.h>
-#include <Fonts/FreeSansBold18pt7b.h>
+// // fonts
+// // https://github.com/adafruit/Adafruit-GFX-Library/tree/master/Fonts
+// #include <Fonts/FreeMonoBold12pt7b.h>
+// #include <Fonts/FreeSans12pt7b.h>
+// #include <Fonts/FreeSans9pt7b.h>
+// #include <Fonts/FreeSansBold12pt7b.h>
+// #include <Fonts/FreeSansBold18pt7b.h>
 
-// #define NUMFLAKES 10  // Number of snowflakes in the animation example
+// // #define NUMFLAKES 10  // Number of snowflakes in the animation example
 
-#define LOGO_HEIGHT 16
-#define LOGO_WIDTH 16
+// #define LOGO_HEIGHT 16
+// #define LOGO_WIDTH 16
 
-static const unsigned char PROGMEM logo_bmp[] =
-    {0b00000000, 0b11000000,
-     0b00000001, 0b11000000,
-     0b00000001, 0b11000000,
-     0b00000011, 0b11100000,
-     0b11110011, 0b11100000,
-     0b11111110, 0b11111000,
-     0b01111110, 0b11111111,
-     0b00110011, 0b10011111,
-     0b00011111, 0b11111100,
-     0b00001101, 0b01110000,
-     0b00011011, 0b10100000,
-     0b00111111, 0b11100000,
-     0b00111111, 0b11110000,
-     0b01111100, 0b11110000,
-     0b01110000, 0b01110000,
-     0b00000000, 0b00110000};
+// static const unsigned char PROGMEM logo_bmp[] =
+//     {0b00000000, 0b11000000,
+//      0b00000001, 0b11000000,
+//      0b00000001, 0b11000000,
+//      0b00000011, 0b11100000,
+//      0b11110011, 0b11100000,
+//      0b11111110, 0b11111000,
+//      0b01111110, 0b11111111,
+//      0b00110011, 0b10011111,
+//      0b00011111, 0b11111100,
+//      0b00001101, 0b01110000,
+//      0b00011011, 0b10100000,
+//      0b00111111, 0b11100000,
+//      0b00111111, 0b11110000,
+//      0b01111100, 0b11110000,
+//      0b01110000, 0b01110000,
+//      0b00000000, 0b00110000};
 // *************************************************adafriut oled lib end
 boolean try_wifi_connect(const char *ssid, const char *password) {
     WiFi.begin(ssid, password);
@@ -366,6 +366,11 @@ void init_display() {
 }
 
 void setup() {
+    init_display();
+    digitalWrite(GREEN_LED_PIN, LOW);
+    digitalWrite(YELLOW_LED_PIN, LOW);
+    digitalWrite(RED_LED_PIN, LOW);
+
     delay(2000);
     pinMode(SOUNDER_PIN, OUTPUT);
     digitalWrite(SOUNDER_PIN, LOW);
@@ -469,7 +474,6 @@ void setup() {
     //               // delay(1000);  // Pause for 2 seconds
 
     // // // Clear the buffer
-    init_display();
 
     delay(1000);
 
@@ -578,6 +582,9 @@ void beep(size_t length) {
 boolean audibleWarning = false;
 int previousCO2 = 400;
 
+#define xwidth = 128;
+#define yhieght = 64;
+
 void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     int highLevel = 800;
     int mediumLevel = 700;
@@ -649,19 +656,29 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
 
     // myDisplay.setFont(u8g2_font_profont29_tf);
     // myDisplay.setFont(u8x8_font_profont29_2x3_r);
-
+    int charW;
+    int charH;
     myDisplay.setFont(u8g2_font_profont29_tf);
-    int charW = 16;
+    charW = 16;
+
+    myDisplay.setFont(u8g2_font_logisoso34_tn);
+    charW = 41;
+
+    myDisplay.setFont(u8g2_font_logisoso32_tn);
+    charW = 18;
+    charH = 32;
 
     // myDisplay.setFont(u8g2_font_inr24_mf);
 
-    myDisplay.drawStr(0, 30, co2string);
+    myDisplay.drawStr(0, charH, co2string);
+    int w = myDisplay.getStrWidth(co2string);
 
     myDisplay.setFont(u8g2_font_fur17_tr);
     myDisplay.setFont(u8g2_font_fur11_tr);
     // myDisplay.setFont(u8g2_font_profont22_tf);
     // myDisplay.drawStr(70, 30, "ppm");
-    myDisplay.drawStr((strlen(co2string) * charW) + 0, 30, "ppm");
+    // myDisplay.drawStr((strlen(co2string) * (charW+1)) + 2, charH, "ppm");
+    myDisplay.drawStr((w), charH, "ppm");
 
     // display.println("Initialising..");
 
