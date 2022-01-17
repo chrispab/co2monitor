@@ -668,6 +668,19 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     charW = 18;
     charH = 32;
 
+    // myDisplay.setFont(u8g2_font_logisoso34_tn);
+    // charW = 19;
+    // charH = 34;
+
+    // myDisplay.setFont(u8g2_font_logisoso38_tn);
+    // charW = 22;
+    // charH = 38;
+
+    // myDisplay.setFont(u8g2_font_logisoso42_tn);
+    // charW = 24;
+    // charH = 42;
+
+
     // myDisplay.setFont(u8g2_font_inr24_mf);
 
     myDisplay.drawStr(0, charH, co2string);
