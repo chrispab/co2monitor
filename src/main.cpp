@@ -234,7 +234,7 @@ void setup_wifi() {
 
     //try work wifi first
     boolean connected = false;
-    //! connected = try_wifi_connect(work_ssid, work_password);
+    connected = try_wifi_connect(work_ssid, work_password);
     if (!connected) {
         connected = try_wifi_connect(home_ssid, home_password);
     }
