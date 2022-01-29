@@ -14,21 +14,21 @@ void setupOTA(void)
     // ArduinoOTA.setPassword("iotsharing");
 
     /* this callback function will be invoked when updating start */
-    ArduinoOTA.onStart([]() {
-        String type;
-        if (ArduinoOTA.getCommand() == U_FLASH)
-            type = "sketch";
-        else // U_SPIFFS
-            type = "filesystem";
+    // ArduinoOTA.onStart([]() {
+    //     String type;
+    //     if (ArduinoOTA.getCommand() == U_FLASH)
+    //         type = "sketch";
+    //     else // U_SPIFFS
+    //         type = "filesystem";
 
-        // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-        Serial.println("Start updating " + type);
-        // Serial.println("Start updating");
-        // myDisplay.wipe();
-        // myDisplay.setFont(u8g2_font_fub25_tf); //30px hieght);
-        // myDisplay.writeLine(4, "OTA-U");
-        // myDisplay.refresh();
-    });
+    //     // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+    //     Serial.println("Start updating " + type);
+    //     // Serial.println("Start updating");
+    //     // myDisplay.wipe();
+    //     // myDisplay.setFont(u8g2_font_fub25_tf); //30px hieght);
+    //     // myDisplay.writeLine(4, "OTA-U");
+    //     // myDisplay.refresh();
+    // });
     /* this callback function will be invoked when updating end */
     ArduinoOTA.onEnd([]() {
         Serial.println("\nEnd updating");

@@ -11,7 +11,7 @@
 
 // ArduinoOTA
 // #include <WiFi.h>
-#include <ArduinoOTA.h>
+// #include <ArduinoOTA.h>
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
 #include <ezAnalogKeypad.h>
@@ -219,7 +219,15 @@ boolean try_wifi_connect(const char *ssid, const char *password) {
     Serial.println(ssid);
     return true;
 }
+void showText(const char *text, int x = 0, int y = 32) {
+    myDisplay.clearBuffer();
 
+    myDisplay.setFont(u8g2_font_fur11_tf);
+    // display.setTextSize(1);
+    myDisplay.setCursor(x, y);  //!25 is optimal for size 1 default bitmap font
+    myDisplay.print(text);
+    myDisplay.sendBuffer();
+}
 void setup_wifi() {
     delay(10);
     // We start by connecting to a WiFi network
@@ -234,13 +242,17 @@ void setup_wifi() {
 
     //try work wifi first
     boolean connected = false;
+    showText(work_ssid);
     connected = try_wifi_connect(work_ssid, work_password);
     if (!connected) {
+        showText(home_ssid);
+
         connected = try_wifi_connect(home_ssid, home_password);
     }
     if (!connected) {
         return;  // restart device
     }
+    showText("connected");
 
     randomSeed(micros());  //??
 
@@ -364,6 +376,15 @@ void init_display() {
     myDisplay.sendBuffer();
     // display.display();
 }
+void showOTAPage() {
+    myDisplay.clearBuffer();
+
+    myDisplay.setFont(u8g2_font_fur11_tf);
+    // display.setTextSize(1);
+    myDisplay.setCursor(0, 32);  //!25 is optimal for size 1 default bitmap font
+    myDisplay.print("OTA Update");
+    myDisplay.sendBuffer();
+}
 
 void setup() {
     init_display();
@@ -477,6 +498,22 @@ void setup() {
 
     delay(1000);
 
+    ArduinoOTA.onStart([]() {
+        String type;
+        if (ArduinoOTA.getCommand() == U_FLASH)
+            type = "sketch";
+        else  // U_SPIFFS
+            type = "filesystem";
+
+        // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+        Serial.println("Start updating " + type);
+        showOTAPage();
+        // Serial.println("Start updating");
+        // myDisplay.wipe();
+        // myDisplay.setFont(u8g2_font_fub25_tf); //30px hieght);
+        // myDisplay.writeLine(4, "OTA-U");
+        // myDisplay.refresh();
+    });
     setupOTA();
 
     // vals
@@ -563,7 +600,7 @@ int postDataToRemoteDB(int CO2, float Temperature, float Humidity) {
 }
 
 void beep(size_t length) {
-    size_t wait = 1;
+    // size_t wait = 1;
     for (size_t i = 0; i < length; i++) {
         digitalWrite(SOUNDER_PIN, HIGH);
         // for (size_t i = 0; i < wait; i++) {
@@ -680,7 +717,6 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     // charW = 24;
     // charH = 42;
 
-
     // myDisplay.setFont(u8g2_font_inr24_mf);
 
     myDisplay.drawStr(0, charH, co2string);
@@ -786,6 +822,206 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     // display.display();
 }
 
+void showInfoPage() {
+    // int highLevel = 800;
+    // int mediumLevel = 700;
+    // int lowLevel = 400;
+    // boolean co2Rising;
+
+    //calc val for beat period
+    // int period =
+    //in 400 to 1000, slow fast
+    // 1200 - in
+    // unsigned long msPerCycle = (3000 - (unsigned long)co2) / 3;
+    // lowLevelLED.setMsPerCycle(msPerCycle);
+    // mediumLevelLED.setMsPerCycle(msPerCycle);
+    // highLevelLED.setMsPerCycle(msPerCycle);
+    // Serial.print("msPerCycle: ");
+    // Serial.println(msPerCycle);
+
+    // if (co2 >= previousCO2) {
+    //     co2Rising = true;
+    // } else {
+    //     co2Rising = false;
+    // }
+    // previousCO2 = co2;
+
+    // if (co2 >= highLevel) {
+    //     lowLevelLED.fullOff();
+    //     mediumLevelLED.fullOff();
+    //     highLevelLED.on();
+    //     highLevelLED.setMsPerCycle(msPerCycle);
+    //     if (audibleWarning) {
+    //         tone(SOUNDER_PIN, 440, 250);
+    //         tone(SOUNDER_PIN, 880, 250);
+    //     }
+    //     Serial.print("highLevel: ");
+    //     Serial.println(co2);
+    // } else if (co2 >= mediumLevel) {
+    //     lowLevelLED.fullOff();
+    //     mediumLevelLED.on();
+    //     highLevelLED.fullOff();
+    //     mediumLevelLED.setMsPerCycle(msPerCycle);
+    //     // digitalWrite(SOUNDER_PIN, HIGH);
+    //     // delay(300);
+    //     // digitalWrite(SOUNDER_PIN, LOW);
+    //     if (audibleWarning) {
+    //         tone(SOUNDER_PIN, 880, 150);
+    //     }
+    //     // tone(SOUNDER_PIN, 440, 500);
+    //     Serial.print("mediumLevel: ");
+    //     Serial.println(co2);
+    // } else {
+    //     lowLevelLED.on();
+    //     mediumLevelLED.fullOff();
+    //     highLevelLED.fullOff();
+    //     lowLevelLED.setMsPerCycle(msPerCycle);
+    //     // beep(200);
+    //     // delay(200);
+    //     // tone(SOUNDER_PIN, 440, 10);
+    //     Serial.print("lowLevel: ");
+    //     Serial.println(co2);
+    // }
+
+    // char co2string[20];
+    // itoa(co2, co2string, 10);
+
+    myDisplay.clearBuffer();
+    // myDisplay.setFont(BIG_TEMP_FONT);
+    // myDisplay.setFont(u8g2_font_fub30_tf);
+    // myDisplay.setFont(u8g2_font_fur30_tr);
+
+    // // myDisplay.setFont(u8g2_font_profont29_tf);
+    // // myDisplay.setFont(u8x8_font_profont29_2x3_r);
+    // int charW;
+    // int charH;
+    // myDisplay.setFont(u8g2_font_profont29_tf);
+    // charW = 16;
+
+    // myDisplay.setFont(u8g2_font_logisoso34_tn);
+    // charW = 41;
+
+    // myDisplay.setFont(u8g2_font_logisoso32_tn);
+    // charW = 18;
+    // charH = 32;
+
+    // myDisplay.setFont(u8g2_font_logisoso34_tn);
+    // charW = 19;
+    // charH = 34;
+
+    // myDisplay.setFont(u8g2_font_logisoso38_tn);
+    // charW = 22;
+    // charH = 38;
+
+    // myDisplay.setFont(u8g2_font_logisoso42_tn);
+    // charW = 24;
+    // charH = 42;
+
+    // myDisplay.setFont(u8g2_font_inr24_mf);
+
+    // myDisplay.drawStr(0, charH, co2string);
+    // int w = myDisplay.getStrWidth(co2string);
+
+    // myDisplay.setFont(u8g2_font_fur17_tr);
+    // myDisplay.setFont(u8g2_font_fur11_tr);
+    // // myDisplay.setFont(u8g2_font_profont22_tf);
+    // // myDisplay.drawStr(70, 30, "ppm");
+    // // myDisplay.drawStr((strlen(co2string) * (charW+1)) + 2, charH, "ppm");
+    // myDisplay.drawStr((w), charH, "ppm");
+
+    // display.println("Initialising..");
+
+    // myDisplay.setFont(u8g2_font_open_iconic_arrow_2x_t);
+    // char trendString[2];
+    // if (co2Rising) {
+    //     trendString[0] = '\x47';  //up on
+    // } else {
+    //     trendString[0] = '\x44';  //down on
+    // }
+    // trendString[1] = '\x00';
+    // myDisplay.drawStr(85, 17, trendString);
+
+    //!audio alert indicator
+    // myDisplay.setFont(u8g2_font_streamline_interface_essential_alert_t);
+    // char iconString[2];
+    // if (audibleWarning) {
+    //     iconString[0] = '\x33';  //alarm on
+    // } else {
+    //     iconString[0] = '\x30';  //alarm off
+    // }
+
+    // iconString[1] = '\x00';
+
+    // myDisplay.drawStr(107, 21, iconString);
+
+    // display.setFont(&FreeMonoBold12pt7b);
+    // display.setFont(&FreeSansBold18pt7b);
+
+    // Clear the buffer
+    // display.clearDisplay();
+    // display.setTextSize(1);
+    // display.setTextColor(WHITE);
+
+    // //co2 val
+    // // display.setCursor(0, 10);
+    // display.setFont(&FreeSans12pt7b);
+    // display.setCursor(0, 16);
+    // // display.setFont(&FreeSans12pt7b);
+    // display.print(co2string);
+    // display.setFont(&FreeSans9pt7b);
+    // display.print("ppm");
+
+    // //deg c val
+    // display.setFont(&FreeSans9pt7b);
+    // display.setCursor(81, 16);
+    // display.printf("%.1f", Temperature);
+    // display.print("C");
+    // char tempStr[7];
+
+    // dtostrf(Temperature, 3, 1, tempStr);
+    // tempStr[4] = '\xb0';
+    // tempStr[5] = 'C';
+    // tempStr[6] = '\x00';
+
+    // myDisplay.setFont(u8g2_font_fur11_tf);
+    // myDisplay.setFont(u8g2_font_profont22_tf);
+    // myDisplay.setFont(u8g2_font_10x20_tf);
+    // myDisplay.setFont(u8g2_font_fur14_tf);
+    // myDisplay.setFont(u8g2_font_fub11_tf);
+    // myDisplay.setFont(u8g2_font_profont17_tf);
+
+    // // u8g2_font_profont22_tf
+
+    // myDisplay.drawStr(0, 63, tempStr);
+
+    // char humiStr[7];
+
+    // dtostrf(Humidity, 3, 1, humiStr);
+    // humiStr[4] = '%';
+    // humiStr[5] = 'H';
+    // humiStr[6] = '\x00';
+
+    // myDisplay.setFont(u8g2_font_fur11_tf);
+
+    // myDisplay.drawStr(63, 63, humiStr);
+    // myDisplay.printf("%.1f", Temperature);
+    // myDisplay.
+    // //humi
+    // display.setFont(&FreeSans9pt7b);
+    // display.setCursor(81, 31);
+    // display.printf("%.1f", Humidity);
+    // display.print("H");
+
+    // // ip address
+    myDisplay.setFont(u8g2_font_fur11_tf);
+    // display.setTextSize(1);
+    myDisplay.setCursor(0, 64);  //!25 is optimal for size 1 default bitmap font
+    myDisplay.print(WiFi.localIP());
+    myDisplay.sendBuffer();
+
+    // display.display();
+}
+
 int CO2 = 100;
 
 unsigned long updateInterval = 15000;
@@ -883,6 +1119,9 @@ void loop() {
                 tone(SOUNDER_PIN, 660, 200);
                 tone(SOUNDER_PIN, 440, 200);
             }
+        }
+        if (key == 'l') {
+            showInfoPage();
         }
     }
 }
