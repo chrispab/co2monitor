@@ -7,3 +7,7 @@ body, h1, h2, h3, h4, h5, h6 {
 -webkit-box-shadow: 5px 5px 15px 5px #000000; box-shadow: 5px 5px 15px 5px #000000;
 
 'JetBrains Mono', 'Droid Sans Mono', 'monospace', monospace, 'Droid Sans Fallback'
+
+
+https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
+
