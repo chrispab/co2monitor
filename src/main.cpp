@@ -20,6 +20,7 @@
 #include "LedFader.h"
 #include "MHZ19.h"
 #include "MyOTA.h"
+#include "secrets.h"
 
 // #define RX_PIN 10                                          // Rx pin which the MHZ19 Tx pin is attached to
 // #define TX_PIN 11                                          // Tx pin which the MHZ19 Rx pin is attached to
@@ -79,18 +80,19 @@ void tone(int pin, int frequency, int duration) {
     delay(duration);
     ledcWrite(SOUND_PWM_CHANNEL, SOUND_OFF);
 }
-
 #endif
-const char *work_ssid = "BTF_Staff";
+
+
+const char *work_ssid = SSID_1;
 // const char* work_ssid = "btf_staff";
-const char *work_password = "Rei1Vnbu!";
+const char *work_password = PASSWORD_1;
 // const char* work_password = "rio2016!";
 
-const char *home_ssid = "notwork";
-const char *home_password = "a new router can solve many problems";
+const char *home_ssid = SSID_2;
+const char *home_password = PASSWORD_2;
 
-const char *soft_ap_ssid = "CO2 Monitor";
-const char *soft_ap_password = "password";
+const char *soft_ap_ssid = SOFT_AP_SSID;
+const char *soft_ap_password = SOFT_AP_PASSWORD;
 
 // const char* mqtt_server = "iotstack.local";
 const char *mqtt_server = "192.168.0.100";
