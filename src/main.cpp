@@ -84,9 +84,7 @@ void tone(int pin, int frequency, int duration) {
 
 
 const char *work_ssid = SSID_1;
-// const char* work_ssid = "btf_staff";
 const char *work_password = PASSWORD_1;
-// const char* work_password = "rio2016!";
 
 const char *home_ssid = SSID_2;
 const char *home_password = PASSWORD_2;
@@ -100,7 +98,6 @@ const char *mqtt_server = "192.168.0.100";
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
 // WiFiServer espServer(80); /* Instance of WiFiServer with port number 80 */
-/* 80 is the Port Number for HTTP Web Server */
 /* A String to capture the incoming HTTP GET Request */
 String request;
 
@@ -122,15 +119,12 @@ DHTesp dht22;
 ezAnalogKeypad keypad(KEYPAD_PIN);  // create ezAnalogKeypad object that attach to pin KEYPAD_PIN
 
 // REPLACE with your Domain name and URL path or IP address with path
-// const char* serverName = "http://example.com/post-data.php";
-// const char* serverName = "http://192.168.0.50:8080/post-data.php"; // dell pc
 const char *remoteServerIP = "192.168.0.199";
 
-// const char *serverName = "http://192.168.0.199:8080/post-data.php"; // work hp @ home wifi
-const char *serverName = "http://dotty.dynu.com:8080/post-data.php";  // work hp @ home wifi
+// const char *serverName = "http://192.168.0.199:8080/post-data.php"; 
+const char *serverName = "http://dotty.dynu.com:8080/post-data.php";  
 
-// Keep this API Key value to be compatible with the PHP code provided in the project page.
-// If you change the apiKeyValue value, the PHP file /post-data.php also needs to have the same key
+//API Key value 
 String apiKeyValue = "tPmAT5Ab3j7F9";
 
 #include <Adafruit_GFX.h>
@@ -159,54 +153,13 @@ enum displayModes {
 // 33 too big - #define BIG_TEMP_FONT u8g2_font_inb33_mf
 //********************************ug82 end
 
-// ***********************************adafruit lib start ============================
-// #define SCREEN_WIDTH 128  // OLED display width, in pixels
-// #define SCREEN_HEIGHT 64  // OLED display height, in pixels
 
-// // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
-// #define OLED_RESET -1        // Reset pin # (or -1 if sharing Arduino reset pin)
-// #define SCREEN_ADDRESS 0x3C  ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-// #define SSD1306_NO_SPLASH 1
-// // Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
-// // fonts
-// // https://github.com/adafruit/Adafruit-GFX-Library/tree/master/Fonts
-// #include <Fonts/FreeMonoBold12pt7b.h>
-// #include <Fonts/FreeSans12pt7b.h>
-// #include <Fonts/FreeSans9pt7b.h>
-// #include <Fonts/FreeSansBold12pt7b.h>
-// #include <Fonts/FreeSansBold18pt7b.h>
-
-// // #define NUMFLAKES 10  // Number of snowflakes in the animation example
-
-// #define LOGO_HEIGHT 16
-// #define LOGO_WIDTH 16
-
-// static const unsigned char PROGMEM logo_bmp[] =
-//     {0b00000000, 0b11000000,
-//      0b00000001, 0b11000000,
-//      0b00000001, 0b11000000,
-//      0b00000011, 0b11100000,
-//      0b11110011, 0b11100000,
-//      0b11111110, 0b11111000,
-//      0b01111110, 0b11111111,
-//      0b00110011, 0b10011111,
-//      0b00011111, 0b11111100,
-//      0b00001101, 0b01110000,
-//      0b00011011, 0b10100000,
-//      0b00111111, 0b11100000,
-//      0b00111111, 0b11110000,
-//      0b01111100, 0b11110000,
-//      0b01110000, 0b01110000,
-//      0b00000000, 0b00110000};
-// *************************************************adafriut oled lib end
 boolean try_wifi_connect(const char *ssid, const char *password) {
     WiFi.begin(ssid, password);
-    //try to connect for 5 secs
-    // boolean timedOut = false;
+    //try to connect for 10 secs
     int counter = 0;
     while ((WiFi.status() != WL_CONNECTED)) {
-        if (counter == 20) {
+        if (counter == 10) {
             Serial.print("could not connect to :");
             Serial.println(ssid);
             return false;
@@ -214,22 +167,24 @@ boolean try_wifi_connect(const char *ssid, const char *password) {
         counter++;
         Serial.print("trying to connect to :");
         Serial.println(ssid);
-
-        delay(500);  //wait, it might still connect
+        delay(1000);  //wait, it might still connect
     }
     Serial.print("connected to :");
     Serial.println(ssid);
     return true;
 }
+
+
 void showText(const char *text, int x = 0, int y = 32) {
     myDisplay.clearBuffer();
 
     myDisplay.setFont(u8g2_font_fur11_tf);
-    // display.setTextSize(1);
     myDisplay.setCursor(x, y);  //!25 is optimal for size 1 default bitmap font
     myDisplay.print(text);
     myDisplay.sendBuffer();
 }
+
+
 void setup_wifi() {
     delay(10);
     // We start by connecting to a WiFi network
@@ -252,11 +207,10 @@ void setup_wifi() {
         connected = try_wifi_connect(home_ssid, home_password);
     }
     if (!connected) {
-        return;  // restart device
+        ESP.restart();
+        // return;  // restart device
     }
     showText("connected");
-
-    randomSeed(micros());  //??
 
     Serial.print("ESP32 IP as soft AP: ");
     Serial.println(WiFi.softAPIP());
@@ -278,15 +232,6 @@ void callback(char *topic, byte *payload, unsigned int length) {
         Serial.print((char)payload[i]);
     }
     Serial.println();
-
-    // Switch on the LED if an 1 was received as first character
-    // if ((char)payload[0] == '1') {
-    //     digitalWrite(BUILTIN_LED, LOW);  // Turn the LED on (Note that LOW is the voltage level
-    //                                      // but actually the LED is on; this is because
-    //                                      // it is active low on the ESP-01)
-    // } else {
-    //     digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by making the voltage HIGH
-    // }
 }
 
 void reconnectMQTT() {
@@ -355,34 +300,21 @@ String readCO2Sensor() {
 #define FORMAT_SPIFFS_IF_FAILED true
 
 void init_display() {
-    // display.clearDisplay();
-    // display.setTextSize(1);
-    // display.setTextColor(WHITE);
-    // display.setCursor(0, 0);
-
-    // display.println("Initialising..");
-    // display.display();
 
     myDisplay.begin();
-    // display.clearDisplay();
-    // display.setTextSize(1);
-    // display.setTextColor(WHITE);
-    // display.setCursor(0, 0);
+
     myDisplay.clearBuffer();
     myDisplay.setFont(u8g2_font_fub17_tr);
 
     // strcpy(justTempString, &tempDisplayString[6]);
     myDisplay.drawStr(0, 38, "Initialising");
-    // display.println("Initialising..");
 
     myDisplay.sendBuffer();
-    // display.display();
 }
 void showOTAPage() {
     myDisplay.clearBuffer();
 
     myDisplay.setFont(u8g2_font_fur11_tf);
-    // display.setTextSize(1);
     myDisplay.setCursor(0, 32);  //!25 is optimal for size 1 default bitmap font
     myDisplay.print("OTA Update");
     myDisplay.sendBuffer();
@@ -410,15 +342,8 @@ void setup() {
         return;
     }
 
-    // sofserial setup if using
-    // mySerial.begin(MHZ19_BAUDRATE, SWSERIAL_8N1, RX_PIN, TX_PIN);
-    // mySerial.enableIntTx(false);
-    // mySerial.begin(MHZ19_BAUDRATE);
-    // myMHZ19.printCommunication();                            // Error Codes are also included here if found (mainly for debugging/interest)
-
     Serial2.begin(9600);
 
-    // myMHZ19.begin(mySerial);  // *Serial(Stream) refence must be passed to library begin().
     myMHZ19.begin(Serial2);  // *Serial(Stream) refence must be passed to library begin().
 
     myMHZ19.autoCalibration();  // Turn auto calibration ON (OFF autoCalibration(false))
@@ -462,7 +387,6 @@ void setup() {
     Serial.print("\n");
     Serial.println("Use the above URL in your Browser to access the CO2 monitor Web Server\n");
 
-    // lastDisplayUpdate = millis() - 11000;
     // Route for root / web page
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) { request->send(SPIFFS, "/index.html"); });
     server.on("/co2", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -484,20 +408,6 @@ void setup() {
     server.begin();
     Serial.println("CO2 monitor Web Server Started");
 
-    // // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-    // if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    //     Serial.println(F("SSD1306 allocation failed"));
-    //     for (;;)
-    //         ;  // Don't proceed, loop forever
-    // }
-    // delay(2000);  // Pause for 2 seconds for display init
-    //               // Show initial display buffer contents on the screen --
-    //               // the library initializes this with an Adafruit splash screen.
-    //               // display.display();
-    //               // delay(1000);  // Pause for 2 seconds
-
-    // // // Clear the buffer
-
     delay(1000);
 
     ArduinoOTA.onStart([]() {
@@ -510,28 +420,9 @@ void setup() {
         // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
         Serial.println("Start updating " + type);
         showOTAPage();
-        // Serial.println("Start updating");
-        // myDisplay.wipe();
-        // myDisplay.setFont(u8g2_font_fub25_tf); //30px hieght);
-        // myDisplay.writeLine(4, "OTA-U");
-        // myDisplay.refresh();
+
     });
     setupOTA();
-
-    // vals
-    // none pressed - 4095
-    // sw1 (left) - 0
-    // sw2 (up) - 415 to 400
-    // sw3 (bottom) - 1140 to 1150
-    // sw4 (right) - 1840 to 1855
-    // sw5(enter) - 2785 to 2800
-    // keypad.setDebounceTime(200);
-    // keypad.registerKey('l', 0);      // analog value when the key '1' is pressed
-    // keypad.registerKey('u', 410);      // analog value when the key '2' is pressed
-    // keypad.registerKey('d', 1145);   // analog value when the key '3' is pressed
-    // keypad.registerKey('r', 1850);  // analog value when the key '4' is pressed
-    // keypad.registerKey('e', 2790);  // analog value when the key '*' is pressed
-    // keypad.setNoPressValue(4095);       // analog value when no key is pressed
 
     //inverted
     int openval = 4095;
@@ -584,7 +475,7 @@ int postDataToRemoteDB(int CO2, float Temperature, float Humidity) {
         //http.addHeader("Content-Type", "application/json");
         //int httpResponseCode = http.POST("{\"value1\":\"19\",\"value2\":\"67\",\"value3\":\"78\"}");
 
-        if (httpResponseCode > 0) {  // got a response code from server so opk - not neccsarily 200 ok, poss 500, 4304 etc
+        if (httpResponseCode > 0) {  // got a response code from server so ok - not neccsarily 200 ok, poss 500, 4304 etc
             Serial.print("HTTP Response code: ");
             Serial.println(httpResponseCode);
         } else {  //error, -1,  probably cos of bad connection e.g dns failure etc
@@ -759,25 +650,6 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     // display.setFont(&FreeMonoBold12pt7b);
     // display.setFont(&FreeSansBold18pt7b);
 
-    // Clear the buffer
-    // display.clearDisplay();
-    // display.setTextSize(1);
-    // display.setTextColor(WHITE);
-
-    // //co2 val
-    // // display.setCursor(0, 10);
-    // display.setFont(&FreeSans12pt7b);
-    // display.setCursor(0, 16);
-    // // display.setFont(&FreeSans12pt7b);
-    // display.print(co2string);
-    // display.setFont(&FreeSans9pt7b);
-    // display.print("ppm");
-
-    // //deg c val
-    // display.setFont(&FreeSans9pt7b);
-    // display.setCursor(81, 16);
-    // display.printf("%.1f", Temperature);
-    // display.print("C");
     char tempStr[7];
 
     dtostrf(Temperature, 3, 1, tempStr);
@@ -806,222 +678,21 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     // myDisplay.setFont(u8g2_font_fur11_tf);
 
     myDisplay.drawStr(63, 63, humiStr);
-    // myDisplay.printf("%.1f", Temperature);
-    // myDisplay.
-    // //humi
-    // display.setFont(&FreeSans9pt7b);
-    // display.setCursor(81, 31);
-    // display.printf("%.1f", Humidity);
-    // display.print("H");
 
-    // // ip address
-    // display.setFont();
-    // display.setTextSize(1);
-    // display.setCursor(0, 25);  //!25 is optimal for size 1 default bitmap font
-    // display.print(WiFi.localIP());
     myDisplay.sendBuffer();
 
-    // display.display();
 }
 
 void showInfoPage() {
-    // int highLevel = 800;
-    // int mediumLevel = 700;
-    // int lowLevel = 400;
-    // boolean co2Rising;
 
-    //calc val for beat period
-    // int period =
-    //in 400 to 1000, slow fast
-    // 1200 - in
-    // unsigned long msPerCycle = (3000 - (unsigned long)co2) / 3;
-    // lowLevelLED.setMsPerCycle(msPerCycle);
-    // mediumLevelLED.setMsPerCycle(msPerCycle);
-    // highLevelLED.setMsPerCycle(msPerCycle);
-    // Serial.print("msPerCycle: ");
-    // Serial.println(msPerCycle);
-
-    // if (co2 >= previousCO2) {
-    //     co2Rising = true;
-    // } else {
-    //     co2Rising = false;
-    // }
-    // previousCO2 = co2;
-
-    // if (co2 >= highLevel) {
-    //     lowLevelLED.fullOff();
-    //     mediumLevelLED.fullOff();
-    //     highLevelLED.on();
-    //     highLevelLED.setMsPerCycle(msPerCycle);
-    //     if (audibleWarning) {
-    //         tone(SOUNDER_PIN, 440, 250);
-    //         tone(SOUNDER_PIN, 880, 250);
-    //     }
-    //     Serial.print("highLevel: ");
-    //     Serial.println(co2);
-    // } else if (co2 >= mediumLevel) {
-    //     lowLevelLED.fullOff();
-    //     mediumLevelLED.on();
-    //     highLevelLED.fullOff();
-    //     mediumLevelLED.setMsPerCycle(msPerCycle);
-    //     // digitalWrite(SOUNDER_PIN, HIGH);
-    //     // delay(300);
-    //     // digitalWrite(SOUNDER_PIN, LOW);
-    //     if (audibleWarning) {
-    //         tone(SOUNDER_PIN, 880, 150);
-    //     }
-    //     // tone(SOUNDER_PIN, 440, 500);
-    //     Serial.print("mediumLevel: ");
-    //     Serial.println(co2);
-    // } else {
-    //     lowLevelLED.on();
-    //     mediumLevelLED.fullOff();
-    //     highLevelLED.fullOff();
-    //     lowLevelLED.setMsPerCycle(msPerCycle);
-    //     // beep(200);
-    //     // delay(200);
-    //     // tone(SOUNDER_PIN, 440, 10);
-    //     Serial.print("lowLevel: ");
-    //     Serial.println(co2);
-    // }
-
-    // char co2string[20];
-    // itoa(co2, co2string, 10);
 
     myDisplay.clearBuffer();
-    // myDisplay.setFont(BIG_TEMP_FONT);
-    // myDisplay.setFont(u8g2_font_fub30_tf);
-    // myDisplay.setFont(u8g2_font_fur30_tr);
 
-    // // myDisplay.setFont(u8g2_font_profont29_tf);
-    // // myDisplay.setFont(u8x8_font_profont29_2x3_r);
-    // int charW;
-    // int charH;
-    // myDisplay.setFont(u8g2_font_profont29_tf);
-    // charW = 16;
-
-    // myDisplay.setFont(u8g2_font_logisoso34_tn);
-    // charW = 41;
-
-    // myDisplay.setFont(u8g2_font_logisoso32_tn);
-    // charW = 18;
-    // charH = 32;
-
-    // myDisplay.setFont(u8g2_font_logisoso34_tn);
-    // charW = 19;
-    // charH = 34;
-
-    // myDisplay.setFont(u8g2_font_logisoso38_tn);
-    // charW = 22;
-    // charH = 38;
-
-    // myDisplay.setFont(u8g2_font_logisoso42_tn);
-    // charW = 24;
-    // charH = 42;
-
-    // myDisplay.setFont(u8g2_font_inr24_mf);
-
-    // myDisplay.drawStr(0, charH, co2string);
-    // int w = myDisplay.getStrWidth(co2string);
-
-    // myDisplay.setFont(u8g2_font_fur17_tr);
-    // myDisplay.setFont(u8g2_font_fur11_tr);
-    // // myDisplay.setFont(u8g2_font_profont22_tf);
-    // // myDisplay.drawStr(70, 30, "ppm");
-    // // myDisplay.drawStr((strlen(co2string) * (charW+1)) + 2, charH, "ppm");
-    // myDisplay.drawStr((w), charH, "ppm");
-
-    // display.println("Initialising..");
-
-    // myDisplay.setFont(u8g2_font_open_iconic_arrow_2x_t);
-    // char trendString[2];
-    // if (co2Rising) {
-    //     trendString[0] = '\x47';  //up on
-    // } else {
-    //     trendString[0] = '\x44';  //down on
-    // }
-    // trendString[1] = '\x00';
-    // myDisplay.drawStr(85, 17, trendString);
-
-    //!audio alert indicator
-    // myDisplay.setFont(u8g2_font_streamline_interface_essential_alert_t);
-    // char iconString[2];
-    // if (audibleWarning) {
-    //     iconString[0] = '\x33';  //alarm on
-    // } else {
-    //     iconString[0] = '\x30';  //alarm off
-    // }
-
-    // iconString[1] = '\x00';
-
-    // myDisplay.drawStr(107, 21, iconString);
-
-    // display.setFont(&FreeMonoBold12pt7b);
-    // display.setFont(&FreeSansBold18pt7b);
-
-    // Clear the buffer
-    // display.clearDisplay();
-    // display.setTextSize(1);
-    // display.setTextColor(WHITE);
-
-    // //co2 val
-    // // display.setCursor(0, 10);
-    // display.setFont(&FreeSans12pt7b);
-    // display.setCursor(0, 16);
-    // // display.setFont(&FreeSans12pt7b);
-    // display.print(co2string);
-    // display.setFont(&FreeSans9pt7b);
-    // display.print("ppm");
-
-    // //deg c val
-    // display.setFont(&FreeSans9pt7b);
-    // display.setCursor(81, 16);
-    // display.printf("%.1f", Temperature);
-    // display.print("C");
-    // char tempStr[7];
-
-    // dtostrf(Temperature, 3, 1, tempStr);
-    // tempStr[4] = '\xb0';
-    // tempStr[5] = 'C';
-    // tempStr[6] = '\x00';
-
-    // myDisplay.setFont(u8g2_font_fur11_tf);
-    // myDisplay.setFont(u8g2_font_profont22_tf);
-    // myDisplay.setFont(u8g2_font_10x20_tf);
-    // myDisplay.setFont(u8g2_font_fur14_tf);
-    // myDisplay.setFont(u8g2_font_fub11_tf);
-    // myDisplay.setFont(u8g2_font_profont17_tf);
-
-    // // u8g2_font_profont22_tf
-
-    // myDisplay.drawStr(0, 63, tempStr);
-
-    // char humiStr[7];
-
-    // dtostrf(Humidity, 3, 1, humiStr);
-    // humiStr[4] = '%';
-    // humiStr[5] = 'H';
-    // humiStr[6] = '\x00';
-
-    // myDisplay.setFont(u8g2_font_fur11_tf);
-
-    // myDisplay.drawStr(63, 63, humiStr);
-    // myDisplay.printf("%.1f", Temperature);
-    // myDisplay.
-    // //humi
-    // display.setFont(&FreeSans9pt7b);
-    // display.setCursor(81, 31);
-    // display.printf("%.1f", Humidity);
-    // display.print("H");
-
-    // // ip address
     myDisplay.setFont(u8g2_font_fur11_tf);
-    // display.setTextSize(1);
-    myDisplay.setCursor(0, 64);  //!25 is optimal for size 1 default bitmap font
+    myDisplay.setCursor(0, 31);  //!25 is optimal for size 1 default bitmap font
     myDisplay.print(WiFi.localIP());
     myDisplay.sendBuffer();
 
-    // display.display();
 }
 
 int CO2 = 100;
@@ -1128,5 +799,5 @@ void loop() {
     }
 }
 
-//to upload /data folder to device SPIFFS
+//to upload /data folder to device SPIFFS for local webpage serving
 // pio run -t uploadfs
