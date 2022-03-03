@@ -17,21 +17,23 @@
 #include <ezAnalogKeypad.h>
 
 #include "DHTesp.h"
+#include "Display.h"
 #include "LedFader.h"
 #include "MHZ19.h"
 #include "MyOTA.h"
 #include "secrets.h"
+#include "version.h"
 
 // #define RX_PIN 10                                          // Rx pin which the MHZ19 Tx pin is attached to
 // #define TX_PIN 11                                          // Tx pin which the MHZ19 Rx pin is attached to
 #define MHZ19_BAUDRATE 9600  // Device to MH-Z19 Serial baudrate (should not be changed)
 
-//!The pins used by ESP32 are defined in this way:
+//! The pins used by ESP32 are defined in this way:
 // #define RX_PIN 33 // Rx pin which the MHZ19 Tx pin is attached to
 // #define TX_PIN 32 // Tx pin which the MHZ19 Rx pin is attached to
 // int dhtPin = 4;
 
-//!The pins used by ESP32 are defined in this way:
+//! The pins used by ESP32 are defined in this way:
 #define RX_PIN 16  // Rx pin which the MHZ19 Tx pin is attached to
 #define TX_PIN 17  // Tx pin which the MHZ19 Rx pin is attached to
 // int dhtPin = 4;
@@ -82,7 +84,6 @@ void tone(int pin, int frequency, int duration) {
 }
 #endif
 
-
 const char *work_ssid = SSID_1;
 const char *work_password = PASSWORD_1;
 
@@ -115,31 +116,33 @@ int value = 0;
 #define dhtPin 25
 DHTesp dht22;
 
-#define KEYPAD_PIN 36               //GPIO36 pyhs pin 14 LHS
+#define KEYPAD_PIN 36               // GPIO36 pyhs pin 14 LHS
 ezAnalogKeypad keypad(KEYPAD_PIN);  // create ezAnalogKeypad object that attach to pin KEYPAD_PIN
 
 // REPLACE with your Domain name and URL path or IP address with path
 const char *remoteServerIP = "192.168.0.199";
 
-// const char *serverName = "http://192.168.0.199:8080/post-data.php"; 
-const char *serverName = "http://dotty.dynu.com:8080/post-data.php";  
+// const char *serverName = "http://192.168.0.199:8080/post-data.php";
+const char *serverName = "http://dotty.dynu.com:8080/post-data.php";
 
-//API Key value 
+// API Key value
 String apiKeyValue = "tPmAT5Ab3j7F9";
 
-#include <Adafruit_GFX.h>
-#include <Adafruit_I2CDevice.h>
-#include <Adafruit_SSD1306.h>
-#include <SPI.h>
-#include <Wire.h>
+// #include <Adafruit_GFX.h>
+// #include <Adafruit_I2CDevice.h>
+// #include <Adafruit_SSD1306.h>
+// #include <SPI.h>
+// #include <Wire.h>
 
 //******************************** u8g2 start
 // create the display object
-#include "Display.h"
+// #include "Display.h"
 
-#define OLED_CLOCK_PIN GPIO_NUM_22  //RHS_P_14 SCL
-#define OLED_DATA_PIN GPIO_NUM_21   //RHS_P_11 SDA
+#define OLED_CLOCK_PIN GPIO_NUM_22  // RHS_P_14 SCL
+#define OLED_DATA_PIN GPIO_NUM_21   // RHS_P_11 SDA
 Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, OLED_CLOCK_PIN, OLED_DATA_PIN);
+// create the display object
+// Display myDisplay(U8G2_R0, /* reset=*/U8X8_PIN_NONE, OLED_CLOCK_PIN, OLED_DATA_PIN);
 
 enum displayModes {
     NORMAL,
@@ -149,68 +152,78 @@ enum displayModes {
 
 //#define SYS_FONT u8g2_font_8x13_tf
 #define SYS_FONT u8g2_font_6x12_tf        // 7 px high
-#define BIG_TEMP_FONT u8g2_font_fub30_tf  //30px hieght
+#define BIG_TEMP_FONT u8g2_font_fub30_tf  // 30px hieght
 // 33 too big - #define BIG_TEMP_FONT u8g2_font_inb33_mf
 //********************************ug82 end
 
-
 boolean try_wifi_connect(const char *ssid, const char *password) {
+    char src[50], dest[50];
+    strcpy(src, ".");
+    strcpy(dest, "");
+
     WiFi.begin(ssid, password);
-    //try to connect for 10 secs
+    // try to connect for 10 secs
+    myDisplay.wipe();
+    myDisplay.writeLine("trying to connect..", 1);
+    myDisplay.writeLine(ssid, 2);
+    myDisplay.refresh();
     int counter = 0;
     while ((WiFi.status() != WL_CONNECTED)) {
         if (counter == 10) {
             Serial.print("could not connect to :");
+            myDisplay.writeLine("could not connect", 3);
+            myDisplay.refresh();
+            delay(1000);
             Serial.println(ssid);
             return false;
         }
         counter++;
         Serial.print("trying to connect to :");
         Serial.println(ssid);
-        delay(1000);  //wait, it might still connect
+        myDisplay.writeLine("trying to connect..", 1);
+        myDisplay.writeLine(ssid, 2);
+        strcat(dest, src);
+        myDisplay.writeLine(dest, 3);
+
+        myDisplay.refresh();
+
+        delay(1000);  // wait, it might still connect
     }
     Serial.print("connected to :");
+    myDisplay.writeLine("connected", 4);
+    myDisplay.refresh();
+
     Serial.println(ssid);
+    delay(1000);
     return true;
 }
-
 
 void showText(const char *text, int x = 0, int y = 32) {
     myDisplay.clearBuffer();
 
     myDisplay.setFont(u8g2_font_fur11_tf);
-    myDisplay.setCursor(x, y);  //!25 is optimal for size 1 default bitmap font
+    myDisplay.setCursor(x, y);  //! 25 is optimal for size 1 default bitmap font
     myDisplay.print(text);
     myDisplay.sendBuffer();
 }
 
-
 void setup_wifi() {
-    delay(10);
-    // We start by connecting to a WiFi network
-    // Serial.println();
-    // Serial.print("Connecting to ");
-    // Serial.println(ssid);
 
     WiFi.mode(WIFI_STA);
     // or
     // WiFi.mode(WIFI_MODE_APSTA);
     // WiFi.softAP(soft_ap_ssid, soft_ap_password);
 
-    //try work wifi first
+    // try work wifi first
     boolean connected = false;
     showText(work_ssid);
     connected = try_wifi_connect(work_ssid, work_password);
     if (!connected) {
-        showText(home_ssid);
-
         connected = try_wifi_connect(home_ssid, home_password);
     }
     if (!connected) {
-        ESP.restart();
-        // return;  // restart device
+        ESP.restart();// restart device
     }
-    showText("connected");
 
     Serial.print("ESP32 IP as soft AP: ");
     Serial.println(WiFi.softAPIP());
@@ -262,9 +275,9 @@ void reconnectMQTT() {
             timedOut = true;
     }
 }
-//MQTT end
+// MQTT end
 
-//read co2 sensor and return as string
+// read co2 sensor and return as string
 int lastGoodCO2ppm;
 
 String readCO2Sensor() {
@@ -273,7 +286,7 @@ String readCO2Sensor() {
     if (CO2ppm == 0) {  //! dont send back 0 - use prev or get till a number
         Serial.println("!!!!!!     Failed to read from CO2 sensor! 0 read");
 
-        //try restarting the serial i/f to sensor
+        // try restarting the serial i/f to sensor
         Serial2.begin(9600);
 
         // myMHZ19.begin(mySerial);  // *Serial(Stream) refence must be passed to library begin().
@@ -282,7 +295,7 @@ String readCO2Sensor() {
 
         if (CO2ppm > 0) {
             return String(CO2ppm);
-        } else {  //return previous good reading made
+        } else {  // return previous good reading made
             return String(lastGoodCO2ppm);
         }
     } else {
@@ -300,144 +313,32 @@ String readCO2Sensor() {
 #define FORMAT_SPIFFS_IF_FAILED true
 
 void init_display() {
-
+    // x = 0->127
+    // y = 0->63
+    // 4 lines @ y=15,31,47,63
     myDisplay.begin();
 
-    myDisplay.clearBuffer();
+    // myDisplay.clearBuffer();
     myDisplay.setFont(u8g2_font_fub17_tr);
+    myDisplay.setFont(u8g2_font_fur11_tr);
 
-    // strcpy(justTempString, &tempDisplayString[6]);
-    myDisplay.drawStr(0, 38, "Initialising");
+    myDisplay.writeLine("Initialising", 1);
+    myDisplay.writeLine(VERSION, 2);
 
-    myDisplay.sendBuffer();
+    myDisplay.refresh();
 }
 void showOTAPage() {
     myDisplay.clearBuffer();
 
     myDisplay.setFont(u8g2_font_fur11_tf);
-    myDisplay.setCursor(0, 32);  //!25 is optimal for size 1 default bitmap font
+    myDisplay.setCursor(0, 32);  //! 25 is optimal for size 1 default bitmap font
     myDisplay.print("OTA Update");
     myDisplay.sendBuffer();
 }
 
-void setup() {
-    init_display();
-    digitalWrite(GREEN_LED_PIN, LOW);
-    digitalWrite(YELLOW_LED_PIN, LOW);
-    digitalWrite(RED_LED_PIN, LOW);
-
-    delay(2000);
-    pinMode(SOUNDER_PIN, OUTPUT);
-    digitalWrite(SOUNDER_PIN, LOW);
-    heartBeatLED.begin();
-    lowLevelLED.begin();
-    mediumLevelLED.begin();
-    highLevelLED.begin();
-    dht22.setup(dhtPin, DHTesp::DHT22);
-    Serial.begin(MONITOR_SPEED);  // Device to serial monitor feedback
-
-    // Initialize SPIFFS
-    if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
-        Serial.println("An Error has occurred while mounting SPIFFS");
-        return;
-    }
-
-    Serial2.begin(9600);
-
-    myMHZ19.begin(Serial2);  // *Serial(Stream) refence must be passed to library begin().
-
-    myMHZ19.autoCalibration();  // Turn auto calibration ON (OFF autoCalibration(false))
-
-    char myVersion[4];
-    myMHZ19.getVersion(myVersion);
-
-    Serial.print("\nFirmware Version: ");
-    for (byte i = 0; i < 4; i++) {
-        Serial.print(myVersion[i]);
-        if (i == 1)
-            Serial.print(".");
-    }
-    Serial.println("");
-
-    Serial.print("Range: ");
-    Serial.println(myMHZ19.getRange());
-    Serial.print("Background CO2: ");
-    Serial.println(myMHZ19.getBackgroundCO2());
-    Serial.print("Temperature Cal: ");
-    Serial.println(myMHZ19.getTempAdjustment());
-    Serial.print("ABC Status: ");
-    myMHZ19.getABC() ? Serial.println("ON") : Serial.println("OFF");
-
-    // pinMode(BUILTIN_LED, OUTPUT);  // Initialize the BUILTIN_LED pin as an output
-    // Serial.begin(9600);
-    setup_wifi();
-
-    //ONLY use mqtt if at home
-    if (WiFi.SSID() == home_ssid) {
-        MQTTclient.setServer(mqtt_server, 1883);
-        MQTTclient.setCallback(callback);
-    }
-    delay(2000);
-    Serial.print("\n");
-
-    Serial.print("\n");
-    Serial.print("The URL of CO2 monitor Web Server is: ");
-    Serial.print("http://");
-    Serial.println(WiFi.localIP());
-    Serial.print("\n");
-    Serial.println("Use the above URL in your Browser to access the CO2 monitor Web Server\n");
-
-    // Route for root / web page
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) { request->send(SPIFFS, "/index.html"); });
-    server.on("/co2", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send_P(200, "text/plain", readCO2Sensor().c_str());
-        Serial.println("readCO2Sensor() called from ajax");
-    });
-    server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request) {
-        float temperature = dht22.getTemperature();
-        request->send(200, "text/plain", String(temperature));
-    });
-    server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request) {
-        float humidity = dht22.getHumidity();
-        request->send(200, "text/plain", String(humidity));
-    });
-
-    server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request) { request->send(SPIFFS, "/favicon-32x32.png", "image/png"); });
-    // Start server
-    Serial.println("Starting CO2 monitor Web Server...");
-    server.begin();
-    Serial.println("CO2 monitor Web Server Started");
-
-    delay(1000);
-
-    ArduinoOTA.onStart([]() {
-        String type;
-        if (ArduinoOTA.getCommand() == U_FLASH)
-            type = "sketch";
-        else  // U_SPIFFS
-            type = "filesystem";
-
-        // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-        Serial.println("Start updating " + type);
-        showOTAPage();
-
-    });
-    setupOTA();
-
-    //inverted
-    int openval = 4095;
-    keypad.setDebounceTime(300);
-    keypad.setNoPressValue(openval - 4095);   // analog value when no key is pressed
-    keypad.registerKey('e', openval - 2790);  // analog value when the key '*' is pressed
-    keypad.registerKey('r', openval - 1840);  // analog value when the key '4' is pressed
-    keypad.registerKey('d', openval - 1145);  // analog value when the key '3' is pressed
-    keypad.registerKey('u', openval - 410);   // analog value when the key '2' is pressed
-    keypad.registerKey('l', openval - 0);     // analog value when the key '1' is pressed
-}
-
 int postDataToRemoteDB(int CO2, float Temperature, float Humidity) {
     int resultCode = 0;
-    //Check WiFi connection status
+    // Check WiFi connection status
     if (WiFi.status() == WL_CONNECTED) {
         WiFiClient client;
         HTTPClient http;
@@ -462,23 +363,23 @@ int postDataToRemoteDB(int CO2, float Temperature, float Humidity) {
 
         // You can comment the httpRequestData variable above
         // then, use the httpRequestData variable below (for testing purposes without the BME280 sensor)
-        //String httpRequestData = "api_key=tPmAT5Ab3j7F9&value1=24.75&value2=49.54&value3=1005.14";
+        // String httpRequestData = "api_key=tPmAT5Ab3j7F9&value1=24.75&value2=49.54&value3=1005.14";
 
         // Send HTTP POST request
         int httpResponseCode = http.POST(httpRequestData);
 
         // If you need an HTTP request with a content type: text/plain
-        //http.addHeader("Content-Type", "text/plain");
-        //int httpResponseCode = http.POST("Hello, World!");
+        // http.addHeader("Content-Type", "text/plain");
+        // int httpResponseCode = http.POST("Hello, World!");
 
         // If you need an HTTP request with a content type: application/json, use the following:
-        //http.addHeader("Content-Type", "application/json");
-        //int httpResponseCode = http.POST("{\"value1\":\"19\",\"value2\":\"67\",\"value3\":\"78\"}");
+        // http.addHeader("Content-Type", "application/json");
+        // int httpResponseCode = http.POST("{\"value1\":\"19\",\"value2\":\"67\",\"value3\":\"78\"}");
 
         if (httpResponseCode > 0) {  // got a response code from server so ok - not neccsarily 200 ok, poss 500, 4304 etc
             Serial.print("HTTP Response code: ");
             Serial.println(httpResponseCode);
-        } else {  //error, -1,  probably cos of bad connection e.g dns failure etc
+        } else {  // error, -1,  probably cos of bad connection e.g dns failure etc
             Serial.print("Error code: ");
             Serial.println(httpResponseCode);
         }
@@ -521,10 +422,10 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     // int lowLevel = 400;
     boolean co2Rising;
 
-    //calc val for beat period
-    // int period =
-    //in 400 to 1000, slow fast
-    // 1200 - in
+    // calc val for beat period
+    //  int period =
+    // in 400 to 1000, slow fast
+    //  1200 - in
     unsigned long msPerCycle = (3000 - (unsigned long)co2) / 3;
     // lowLevelLED.setMsPerCycle(msPerCycle);
     // mediumLevelLED.setMsPerCycle(msPerCycle);
@@ -627,20 +528,20 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     myDisplay.setFont(u8g2_font_open_iconic_arrow_2x_t);
     char trendString[2];
     if (co2Rising) {
-        trendString[0] = '\x47';  //up on
+        trendString[0] = '\x47';  // up on
     } else {
-        trendString[0] = '\x44';  //down on
+        trendString[0] = '\x44';  // down on
     }
     trendString[1] = '\x00';
     myDisplay.drawStr(85, 17, trendString);
 
-    //!audio alert indicator
+    //! audio alert indicator
     myDisplay.setFont(u8g2_font_streamline_interface_essential_alert_t);
     char iconString[2];
     if (audibleWarning) {
-        iconString[0] = '\x33';  //alarm on
+        iconString[0] = '\x33';  // alarm on
     } else {
-        iconString[0] = '\x30';  //alarm off
+        iconString[0] = '\x30';  // alarm off
     }
 
     iconString[1] = '\x00';
@@ -680,19 +581,15 @@ void updateLEDDisplay(int co2, float Temperature, float Humidity) {
     myDisplay.drawStr(63, 63, humiStr);
 
     myDisplay.sendBuffer();
-
 }
 
 void showInfoPage() {
-
-
     myDisplay.clearBuffer();
 
     myDisplay.setFont(u8g2_font_fur11_tf);
-    myDisplay.setCursor(0, 31);  //!25 is optimal for size 1 default bitmap font
+    myDisplay.setCursor(0, 31);  //! 25 is optimal for size 1 default bitmap font
     myDisplay.print(WiFi.localIP());
     myDisplay.sendBuffer();
-
 }
 
 int CO2 = 100;
@@ -709,15 +606,131 @@ const long timeoutTime = 2000;
 
 float temperature;
 float humidity;
+
+void setup() {
+    tone(SOUNDER_PIN, 880, 200);
+    init_display();
+    digitalWrite(GREEN_LED_PIN, LOW);
+    digitalWrite(YELLOW_LED_PIN, LOW);
+    digitalWrite(RED_LED_PIN, LOW);
+
+    delay(2000);
+    pinMode(SOUNDER_PIN, OUTPUT);
+    digitalWrite(SOUNDER_PIN, LOW);
+    heartBeatLED.begin();
+    lowLevelLED.begin();
+    mediumLevelLED.begin();
+    highLevelLED.begin();
+    dht22.setup(dhtPin, DHTesp::DHT22);
+    Serial.begin(MONITOR_SPEED);  // Device to serial monitor feedback
+
+    // Initialize SPIFFS
+    if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
+        Serial.println("An Error has occurred while mounting SPIFFS");
+        return;
+    }
+
+    Serial2.begin(9600);
+
+    myMHZ19.begin(Serial2);  // *Serial(Stream) refence must be passed to library begin().
+
+    myMHZ19.autoCalibration();  // Turn auto calibration ON (OFF autoCalibration(false))
+
+    char myVersion[4];
+    myMHZ19.getVersion(myVersion);
+
+    Serial.print("\nFirmware Version: ");
+    for (byte i = 0; i < 4; i++) {
+        Serial.print(myVersion[i]);
+        if (i == 1)
+            Serial.print(".");
+    }
+    Serial.println("");
+
+    Serial.print("Range: ");
+    Serial.println(myMHZ19.getRange());
+    Serial.print("Background CO2: ");
+    Serial.println(myMHZ19.getBackgroundCO2());
+    Serial.print("Temperature Cal: ");
+    Serial.println(myMHZ19.getTempAdjustment());
+    Serial.print("ABC Status: ");
+    myMHZ19.getABC() ? Serial.println("ON") : Serial.println("OFF");
+
+    // pinMode(BUILTIN_LED, OUTPUT);  // Initialize the BUILTIN_LED pin as an output
+    // Serial.begin(9600);
+    setup_wifi();
+
+    // ONLY use mqtt if at home
+    if (WiFi.SSID() == home_ssid) {
+        MQTTclient.setServer(mqtt_server, 1883);
+        MQTTclient.setCallback(callback);
+    }
+    // delay(2000);
+    Serial.print("\n");
+
+    Serial.print("\n");
+    Serial.print("The URL of CO2 monitor Web Server is: ");
+    Serial.print("http://");
+    Serial.println(WiFi.localIP());
+    Serial.print("\n");
+    Serial.println("Use the above URL in your Browser to access the CO2 monitor Web Server\n");
+
+    // Route for root / web page
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) { request->send(SPIFFS, "/index.html"); });
+    server.on("/co2", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send_P(200, "text/plain", readCO2Sensor().c_str());
+        Serial.println("readCO2Sensor() called from ajax");
+    });
+    server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request) {
+        float temperature = dht22.getTemperature();
+        request->send(200, "text/plain", String(temperature));
+    });
+    server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request) {
+        float humidity = dht22.getHumidity();
+        request->send(200, "text/plain", String(humidity));
+    });
+
+    server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request) { request->send(SPIFFS, "/favicon-32x32.png", "image/png"); });
+    // Start server
+    Serial.println("Starting CO2 monitor Web Server...");
+    server.begin();
+    Serial.println("CO2 monitor Web Server Started");
+
+    delay(1000);
+
+    ArduinoOTA.onStart([]() {
+        String type;
+        if (ArduinoOTA.getCommand() == U_FLASH)
+            type = "sketch";
+        else  // U_SPIFFS
+            type = "filesystem";
+
+        // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+        Serial.println("Start updating " + type);
+        showOTAPage();
+    });
+    setupOTA();
+
+    // inverted
+    int openval = 4095;
+    keypad.setDebounceTime(300);
+    keypad.setNoPressValue(openval - 4095);   // analog value when no key is pressed
+    keypad.registerKey('e', openval - 2790);  // analog value when the key '*' is pressed
+    keypad.registerKey('r', openval - 1840);  // analog value when the key '4' is pressed
+    keypad.registerKey('d', openval - 1145);  // analog value when the key '3' is pressed
+    keypad.registerKey('u', openval - 410);   // analog value when the key '2' is pressed
+    keypad.registerKey('l', openval - 0);     // analog value when the key '1' is pressed
+}
+
 void loop() {
     heartBeatLED.update();
     lowLevelLED.update();
     mediumLevelLED.update();
     highLevelLED.update();
 
-    if (millis() - lastDisplayUpdate >= updateInterval) {  //get data every n ms
-        /* note: getCO2() default is command "CO2 Unlimited". This returns the correct CO2 reading even 
-        if below background CO2 levels or above range (useful to validate sensor). You can use the 
+    if (millis() - lastDisplayUpdate >= updateInterval) {  // get data every n ms
+        /* note: getCO2() default is command "CO2 Unlimited". This returns the correct CO2 reading even
+        if below background CO2 levels or above range (useful to validate sensor). You can use the
         usual documented command with getCO2(false) */
 
         CO2 = readCO2Sensor().toInt();
@@ -755,7 +768,7 @@ void loop() {
             } else
                 Serial.println("MQTT NOT connected - cant publish CO2");
         }
-        //send the data to the remote db to store
+        // send the data to the remote db to store
         int postStatus = postDataToRemoteDB(CO2, dht22.getTemperature(), dht22.getHumidity());
         if (postStatus < 0) {
             Serial.println("WiFi status is < 0 - trying setup_wifi()");
@@ -799,5 +812,5 @@ void loop() {
     }
 }
 
-//to upload /data folder to device SPIFFS for local webpage serving
-// pio run -t uploadfs
+// to upload /data folder to device SPIFFS for local webpage serving
+//  pio run -t uploadfs

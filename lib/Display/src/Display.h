@@ -16,7 +16,7 @@ class Display : public U8G2 {
     Display(const u8g2_cb_t *rotation, uint8_t reset = U8X8_PIN_NONE,
             uint8_t clock = U8X8_PIN_NONE, uint8_t data = U8X8_PIN_NONE);
 
-    void writeLine(int lineNumber, const char *lineText);
+    void writeLine(const char *lineText, int lineNumber);
     void refresh(void);
     void wipe(void);
 };
