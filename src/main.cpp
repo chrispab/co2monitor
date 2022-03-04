@@ -208,7 +208,6 @@ void showText(const char *text, int x = 0, int y = 32) {
 }
 
 void setup_wifi() {
-
     WiFi.mode(WIFI_STA);
     // or
     // WiFi.mode(WIFI_MODE_APSTA);
@@ -222,8 +221,20 @@ void setup_wifi() {
         connected = try_wifi_connect(home_ssid, home_password);
     }
     if (!connected) {
-        ESP.restart();// restart device
+        myDisplay.wipe();
+        myDisplay.writeLine("cant connect", 1);
+        myDisplay.writeLine("Restarting...", 3);
+        myDisplay.refresh();
+        delay(5000);
+        ESP.restart();  // restart device
     }
+    myDisplay.wipe();
+    myDisplay.writeLine("connected to:", 1);
+    myDisplay.writeLine(WiFi.SSID().c_str(), 2);
+    myDisplay.writeLine("IP:", 3);
+    myDisplay.writeLine(WiFi.localIP().toString().c_str(), 4);
+    myDisplay.refresh();
+    delay(5000);
 
     Serial.print("ESP32 IP as soft AP: ");
     Serial.println(WiFi.softAPIP());
