@@ -387,6 +387,8 @@ int postDataToRemoteDB(int CO2, float Temperature, float Humidity) {
         // http.addHeader("Content-Type", "application/json");
         // int httpResponseCode = http.POST("{\"value1\":\"19\",\"value2\":\"67\",\"value3\":\"78\"}");
 
+        //! what if no response from logging server???
+
         if (httpResponseCode > 0) {  // got a response code from server so ok - not neccsarily 200 ok, poss 500, 4304 etc
             Serial.print("HTTP Response code: ");
             Serial.println(httpResponseCode);
@@ -782,8 +784,21 @@ void loop() {
         // send the data to the remote db to store
         int postStatus = postDataToRemoteDB(CO2, dht22.getTemperature(), dht22.getHumidity());
         if (postStatus < 0) {
-            Serial.println("WiFi status is < 0 - trying setup_wifi()");
-            setup_wifi();
+            if (postStatus == -11) {
+                // bad responbse from db server
+                myDisplay.wipe();
+                myDisplay.setFont(u8g2_font_fur11_tf);
+
+                myDisplay.writeLine("No response - DB", 1);
+                // myDisplay.writeLine(WiFi.SSID().c_str(), 2);
+                myDisplay.writeLine("ERROR -11", 3);
+                // myDisplay.writeLine(WiFi.localIP().toString().c_str(), 4);
+                myDisplay.refresh();
+                delay(500);
+            } else {
+                Serial.println("WiFi status is < 0 - trying setup_wifi()");
+                setup_wifi();
+            }
         }
 
         lastDisplayUpdate = millis();
