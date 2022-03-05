@@ -796,6 +796,17 @@ void loop() {
                 myDisplay.refresh();
                 delay(500);
             } else {
+                myDisplay.wipe();
+                myDisplay.setFont(u8g2_font_fur11_tf);
+
+                myDisplay.writeLine("post response error:", 1);
+                // myDisplay.writeLine(WiFi.SSID().c_str(), 2);
+                char s[11]; 
+                sprintf(s,"%d", postStatus);
+                myDisplay.writeLine(s, 3);
+                // myDisplay.writeLine(WiFi.localIP().toString().c_str(), 4);
+                myDisplay.refresh();
+                delay(1000);
                 Serial.println("WiFi status is < 0 - trying setup_wifi()");
                 setup_wifi();
             }
